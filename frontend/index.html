@@ -399,6 +399,37 @@
         </div>
       </div>
 
+      <div class="rounded-xl p-4 mb-4" style="background:rgba(79,125,114,0.12);border:1px solid rgba(111,150,140,0.28)">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-white">Gercek Entegrasyon Demo Akisi</p>
+            <p class="text-xs text-slate-500 mt-1">Optimize Et butonu aktif dashboard veya simulator senaryosunu baz alir, backend /api/twin-optimize algoritmasini calistirir ve LLM destekli operasyon raporu uretir.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="chip bg-green-500/10 text-green-400 border border-green-500/20" id="llm-mode-badge">LLM: HAZIR</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-3 mt-4">
+          <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+            <p class="text-xs text-slate-600">Veri Kaynagi</p>
+            <p class="text-sm font-semibold text-slate-300" id="demo-data-source">Bekleniyor</p>
+          </div>
+          <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+            <p class="text-xs text-slate-600">Backend</p>
+            <p class="text-sm font-semibold text-slate-300" id="demo-backend-status">Hazir degil</p>
+          </div>
+          <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+            <p class="text-xs text-slate-600">Fizik Ciktisi</p>
+            <p class="text-sm font-semibold text-slate-300" id="demo-physics-status">-</p>
+          </div>
+          <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+            <p class="text-xs text-slate-600">Takvim Parser</p>
+            <p class="text-sm font-semibold text-slate-300" id="demo-calendar-status">-</p>
+          </div>
+        </div>
+        <pre id="demo-payload-preview" class="hidden mt-3 text-xs text-slate-400 mono whitespace-pre-wrap rounded-lg p-3" style="background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.06)"></pre>
+      </div>
+
       <div class="grid grid-cols-5 gap-4 mb-4">
         <div class="col-span-2 rounded-xl p-5" style="background:rgba(0,51,160,0.12);border:1px solid rgba(0,51,160,0.25)">
           <div class="flex items-center gap-2 mb-4">
@@ -410,11 +441,11 @@
           </div>
           <div class="space-y-2.5">
             <div class="flex items-center justify-between py-2 border-b border-white/5">
-              <span class="text-xs text-slate-400">Chiller Kullanımı</span>
+              <span class="text-xs text-slate-400">Chiller Setpoint</span>
               <div class="flex items-center gap-2 mono text-xs">
-                <span class="text-slate-600 line-through" id="r-chiller-from">%78</span>
+                <span class="text-slate-600 line-through" id="r-chiller-from">6.0C</span>
                 <i class="fas fa-arrow-right text-green-400 text-xs"></i>
-                <span class="text-green-400 font-semibold" id="r-chiller-to">%62</span>
+                <span class="text-green-400 font-semibold" id="r-chiller-to">8.5C</span>
               </div>
             </div>
             <div class="flex items-center justify-between py-2 border-b border-white/5">
@@ -580,9 +611,9 @@
         <div class="col-span-2 rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
           <div class="flex items-center justify-between mb-4">
             <p class="text-sm font-semibold text-white">Kontrol Parametreleri</p>
-            <span id="regime-label" class="chip bg-green-500/10 text-green-400 border border-green-500/20">AI Otonom — Kilitli</span>
+            <span id="regime-label" class="chip bg-amber-500/10 text-amber-400 border border-amber-500/20">Manuel Senaryo — Aktif</span>
           </div>
-          <div id="sliders-wrap" class="space-y-5 opacity-40 pointer-events-none select-none">
+          <div id="sliders-wrap" class="space-y-5">
             <div>
               <div class="flex justify-between mb-1.5"><span class="text-xs font-medium text-slate-400">Dış Sıcaklık (Ankara)</span><span class="text-xs mono text-amber-400" id="sl-temp-val">18°C</span></div>
               <input type="range" class="w-full accent-blue-500" min="-10" max="45" value="18" id="sl-temp" oninput="updateSim()">
@@ -627,6 +658,9 @@
             </div>
             <p class="text-xs text-slate-600 mt-1.5">COP: <span class="mono text-slate-400" id="sim-cop">3.2</span> | Karnot eff: <span class="mono text-slate-400">%35</span></p>
           </div>
+          <button onclick="runOptimize()" class="btn-primary w-full py-3 rounded-lg text-sm font-semibold text-white">
+            <i class="fas fa-bolt mr-2"></i>Bu Senaryoyu Optimize Et
+          </button>
           <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
             <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Rack Isı (Canlı)</p>
             <div class="grid gap-1" style="grid-template-columns:repeat(8,1fr)" id="sim-rack"></div>
@@ -844,7 +878,7 @@ function showPage(id,navEl){
 }
 
 // REGIME
-let regime='auto';
+let regime='manual';
 function setRegime(r){
   regime=r;
   const a=document.getElementById('regime-auto'),m=document.getElementById('regime-manual'),
@@ -930,16 +964,352 @@ function startNemotronStream(reportText){
 }
 
 // OPTIMIZE
-function runOptimize(){
+async function runOptimize(){
   const btn=document.getElementById('opt-btn'),txt=document.getElementById('opt-btn-txt'),
-        pbar=document.getElementById('opt-pbar'),fill=document.getElementById('opt-fill');
-  btn.disabled=true;txt.textContent='Optuna 150 senaryo...';
-  pbar.classList.remove('hidden');let w=0;
-  const iv=setInterval(()=>{
-    w+=Math.random()*6+2;if(w>=100){w=100;clearInterval(iv);
-      setTimeout(()=>{btn.disabled=false;txt.textContent='Optimize Et';pbar.classList.add('hidden');fill.style.width='0%';fetchBackendReport();},300);
-    }fill.style.width=w+'%';
-  },90);
+        pbar=document.getElementById('opt-pbar'),fill=document.getElementById('opt-fill'),
+        preview=document.getElementById('demo-payload-preview');
+  if(btn)btn.disabled=true;
+  if(txt)txt.textContent='Senaryo okunuyor...';
+  if(pbar)pbar.classList.remove('hidden');
+  if(fill)fill.style.width='8%';
+  setDemoStatus('demo-data-source','Manuel/preset senaryo okunuyor');
+  setDemoStatus('demo-backend-status','Backend kontrol ediliyor');
+  setDemoStatus('demo-physics-status','Optuna bekleniyor');
+  setDemoStatus('demo-calendar-status','Takvim bekleniyor');
+  if(preview){preview.classList.remove('hidden');preview.textContent='Optimizasyon akisi basladi...';}
+
+  try{
+    const [importantDatesText,healthResponse]=await Promise.all([
+      fetch('sample-data/important-dates.csv').then(r=>r.text()),
+      fetch(`${API_BASE}/health`)
+    ]);
+    if(!healthResponse.ok)throw new Error('health failed');
+    const health=await healthResponse.json();
+    setDemoStatus('demo-backend-status',health.status==='ok'?'Baglandi':'Uyari','ok');
+    if(fill)fill.style.width='20%';
+
+    const scenario=buildManualOptimizationScenario();
+    setDemoStatus('demo-data-source',`${scenario.sourceLabel} · yuk %${scenario.workload.toFixed(0)} · ${scenario.ambient.toFixed(1)}C`,scenario.workload?'ok':'warn');
+
+    if(txt)txt.textContent='Takvim parse ediliyor...';
+    const calendarResponse=await fetch(`${API_BASE}/api/calendar/parse`,{method:'POST',headers:{'Content-Type':'text/csv'},body:importantDatesText});
+    if(calendarResponse.ok){
+      const calendarData=await calendarResponse.json();
+      setDemoStatus('demo-calendar-status',`${calendarData.accepted_count} olay`,calendarData.accepted_count?'ok':'warn');
+      if(Array.isArray(calendarData.events)&&calendarData.events.length){
+        CALENDAR_EVENTS=calendarData.events.map(ev=>({
+          id:ev.id,
+          name:ev.name,
+          date:ev.date,
+          load:ev.load,
+          severity:ev.level==='high'?'critical':'normal',
+          desc:ev.desc
+        }));
+        renderCalendar();renderCalEventsList();
+      }
+    }
+    if(fill)fill.style.width='35%';
+
+    const optimizePayload={
+      server_workload_pct:scenario.workload,
+      ambient_temp_c:scenario.ambient,
+      hour:scenario.hour,
+      month:scenario.month,
+      it_capacity_mw:scenario.itCapacityMw,
+      n_trials:60
+    };
+    if(preview)preview.textContent='Backend /api/twin-optimize payload:\n'+JSON.stringify(optimizePayload,null,2);
+    if(txt)txt.textContent='Backend Optuna calisiyor...';
+    const optimizeResponse=await fetch(`${API_BASE}/api/twin-optimize`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(optimizePayload)});
+    if(!optimizeResponse.ok)throw new Error('twin optimize failed');
+    const optimization=await optimizeResponse.json();
+    const selectedRank=optimization.decision?.selected_candidate_rank;
+    const selected=optimization.candidates.find(c=>c.rank===selectedRank)||optimization.candidates[0];
+    if(!selected)throw new Error('candidate missing');
+    if(fill)fill.style.width='72%';
+
+    updateDashboardFromOptimization(optimization.current,selected,scenario);
+    setDemoStatus('demo-physics-status',`PUE ${optimization.current.pue.toFixed(2)} -> ${selected.pue.toFixed(2)}`,selected.pue<optimization.current.pue?'ok':'warn');
+
+    const reportPayload={
+      scenario_name:`${APP_STATE.facilityName} pik yuk optimizasyonu`,
+      current_pue:optimization.current.pue,
+      optimum_pue:selected.pue,
+      ambient_temp_c:scenario.ambient,
+      server_workload_pct:scenario.workload,
+      inlet_temp_c:selected.inlet_temp_c,
+      current_chiller_pct:scenario.chillerPct,
+      optimized_chiller_pct:Math.max(30,scenario.chillerPct*0.78),
+      current_fan_pct:optimization.current.fan_speed_pct,
+      optimized_fan_pct:selected.fan_speed_pct,
+      monthly_savings_tl:selected.monthly_savings_tl,
+      co2_savings_ton_month:Math.round((selected.co2_tons_year||0)/12*10)/10,
+      physics_status:selected.safety_ok?'ok':'warning',
+      physics_notes:[selected.ashrae_status,`Risk: ${selected.risk_level}`,optimization.policy?.reason_tr||optimization.policy_used?.reason_tr||''],
+      recommended_actions:[
+        `Chiller setpoint ${selected.chiller_setpoint_c}C`,
+        `Fan hizi %${selected.fan_speed_pct}`,
+        selected.validation?.approved?'Fizik dogrulama guvenli':'Operator onayi ile incele'
+      ],
+      use_mock:false
+    };
+    if(preview)preview.textContent='Backend /api/twin-optimize sonucu:\n'+JSON.stringify({scenario,optimizePayload,selected,decision:optimization.decision},null,2)+'\n\nBackend /api/report payload:\n'+JSON.stringify(reportPayload,null,2);
+    if(txt)txt.textContent='LLM raporu uretiliyor...';
+    document.getElementById('llm-mode-badge').textContent='LLM: CALISIYOR';
+    const reportResponse=await fetch(`${API_BASE}/api/report`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportPayload)});
+    if(!reportResponse.ok)throw new Error('report failed');
+    const reportData=await reportResponse.json();
+    document.getElementById('llm-mode-badge').textContent=`LLM: ${reportData.provider}`;
+    startNemotronStream(reportData.report);
+    if(fill)fill.style.width='100%';
+  }catch(error){
+    setDemoStatus('demo-backend-status','Akis hatasi','bad');
+    setDemoStatus('demo-physics-status',error.message,'warn');
+    if(preview)preview.textContent=`Optimizasyon calismadi: ${error.message}\n\nBackend 8001 ve frontend 3000 portunda calisiyor olmali.`;
+    startNemotronStream("Optimizasyon akisi tamamlanamadi. Backend servisinin 8001 portunda calistigini ve .env icinde NVIDIA_API_KEY veya OPENROUTER_API_KEY bulundugunu kontrol edin. API anahtari yoksa backend fallback metin uretir, ama Optuna ve fizik motoru yine calisir.");
+  }finally{
+    setTimeout(()=>{if(btn)btn.disabled=false;if(txt)txt.textContent='Optimize Et';if(pbar)pbar.classList.add('hidden');if(fill)fill.style.width='0%';},500);
+  }
+}
+
+function setDemoStatus(id,text,kind='neutral'){
+  const el=document.getElementById(id);if(!el)return;
+  el.textContent=text;
+  el.className='text-sm font-semibold '+(kind==='ok'?'text-green-400':kind==='warn'?'text-amber-400':kind==='bad'?'text-red-400':'text-slate-300');
+}
+function parseCsvRows(text){
+  const lines=text.trim().split(/\r?\n/).filter(Boolean);
+  if(lines.length<2)return[];
+  const headers=lines[0].split(',').map(h=>h.trim());
+  return lines.slice(1).map(line=>{
+    const cells=line.split(',').map(c=>c.trim());
+    return headers.reduce((row,header,index)=>{row[header]=cells[index]||'';return row;},{});
+  });
+}
+function avg(rows,key){
+  const values=rows.map(r=>parseFloat(String(r[key]||'').replace(',','.'))).filter(Number.isFinite);
+  if(!values.length)return 0;
+  return values.reduce((sum,value)=>sum+value,0)/values.length;
+}
+function avgByHeader(rows,needle){
+  const first=rows[0]||{};
+  const key=Object.keys(first).find(header=>header.includes(needle));
+  return key?avg(rows,key):0;
+}
+function valueByHeader(row,needle,fallback=0){
+  const key=Object.keys(row||{}).find(header=>header.includes(needle));
+  const value=parseFloat(String((key?row[key]:fallback)||fallback).replace(',','.'));
+  return Number.isFinite(value)?value:fallback;
+}
+function buildOptimizationScenario(rows){
+  if(!rows.length)throw new Error('operation sample data empty');
+  const peak=rows.slice().sort((a,b)=>valueByHeader(b,'Server_Workload')-valueByHeader(a,'Server_Workload'))[0];
+  const timestamp=peak.Timestamp||peak.timestamp||'2026-06-15 12:00';
+  const date=new Date(timestamp.replace(' ','T'));
+  return {
+    rowCount:rows.length,
+    timestamp,
+    workload:valueByHeader(peak,'Server_Workload',avg(rows,'Server_Workload(%)')||60),
+    ambient:valueByHeader(peak,'Ambient_Temperature',avgByHeader(rows,'Ambient_Temperature')||22),
+    inlet:valueByHeader(peak,'Inlet_Temperature',avgByHeader(rows,'Inlet_Temperature')||21),
+    chillerPct:valueByHeader(peak,'Chiller_Usage',75),
+    fanPct:valueByHeader(peak,'AHU_Usage',80),
+    hour:Number.isFinite(date.getHours())?date.getHours():12,
+    month:Number.isFinite(date.getMonth())?date.getMonth()+1:6,
+    itCapacityMw:21
+  };
+}
+function inferMonthFromAmbient(temp){
+  if(temp <= 5)return 1;
+  if(temp >= 30)return 7;
+  if(temp >= 24)return 8;
+  if(temp >= 15)return 4;
+  return 10;
+}
+function buildManualOptimizationScenario(){
+  const simActive=document.getElementById('page-simulator')?.classList.contains('active');
+  if(simActive){
+    const temp=+document.getElementById('sl-temp').value;
+    const load=+document.getElementById('sl-load').value;
+    const hour=+document.getElementById('sl-hour').value;
+    const chiller=+document.getElementById('sl-chiller').value;
+    const fan=+document.getElementById('sl-fan').value;
+    return {
+      sourceLabel:'Simulator manuel senaryo',
+      rowCount:1,
+      timestamp:`manual ${hour.toString().padStart(2,'0')}:00`,
+      workload:load,
+      ambient:temp,
+      inlet:parseFloat(document.getElementById('sim-inlet').textContent)||21,
+      chillerPct:chiller,
+      fanPct:fan,
+      hour,
+      month:inferMonthFromAmbient(temp),
+      itCapacityMw:21
+    };
+  }
+  const now=new Date();
+  return {
+    sourceLabel:'Dashboard anlik parametreler',
+    rowCount:1,
+    timestamp:now.toISOString(),
+    workload:parseFloat(document.getElementById('d-load').textContent)||67,
+    ambient:parseFloat(document.getElementById('d-temp').textContent)||22,
+    inlet:parseFloat(document.getElementById('d-inlet').textContent)||21,
+    chillerPct:78,
+    fanPct:parseFloat(document.getElementById('r-fan-from').textContent.replace(/[^\\d.]/g,''))||85,
+    hour:now.getHours(),
+    month:now.getMonth()+1,
+    itCapacityMw:21
+  };
+}
+function pctToChillerSetpoint(chillerPct){
+  return Math.max(6,Math.min(16,16-(chillerPct/100)*10));
+}
+function moneyFromPueDelta(currentPue,targetPue,itCapacityMw){
+  const savedKw=Math.max(0,(currentPue-targetPue)*itCapacityMw*1000);
+  return Math.round(savedKw*720*3.2);
+}
+function updateDashboardFromBackend(current,target,metrics){
+  const savings=moneyFromPueDelta(current.pue,target.pue,metrics.itCapacityMw);
+  document.getElementById('d-current-pue').textContent=current.pue.toFixed(2);
+  document.getElementById('d-target-pue').textContent=target.pue.toFixed(2);
+  document.getElementById('d-it-load').innerHTML=(metrics.workload/100*metrics.itCapacityMw).toFixed(1)+'<span class="text-lg">MW</span>';
+  document.getElementById('d-savings').textContent=(savings/1000).toFixed(0)+'K TL';
+  document.getElementById('d-temp').textContent=metrics.ambient.toFixed(1)+'C';
+  document.getElementById('d-load').textContent=metrics.workload.toFixed(0)+'%';
+  document.getElementById('d-inlet').textContent=current.inlet_temp_c.toFixed(1)+'C';
+  document.getElementById('d-co2').textContent=(Math.max(0,(current.pue-target.pue)*metrics.itCapacityMw*720*0.45)).toFixed(1)+'t';
+  document.getElementById('r-chiller-from').textContent=metrics.chillerPct.toFixed(0)+'%';
+  document.getElementById('r-fan-from').textContent=metrics.fanPct.toFixed(0)+'%';
+  document.getElementById('r-chiller-to').textContent=Math.max(30,metrics.chillerPct*0.78).toFixed(0)+'%';
+  document.getElementById('r-fan-to').textContent=Math.max(30,metrics.fanPct*0.72).toFixed(0)+'%';
+  renderChart(current.pue,target.pue);renderRackMatrix('rack-matrix',current.pue);
+  return savings;
+}
+function updateDashboardFromOptimization(current,selected,scenario){
+  document.getElementById('d-current-pue').textContent=current.pue.toFixed(2);
+  document.getElementById('d-target-pue').textContent=selected.pue.toFixed(2);
+  document.getElementById('d-it-load').innerHTML=(scenario.workload/100*scenario.itCapacityMw).toFixed(1)+'<span class="text-lg">MW</span>';
+  document.getElementById('d-savings').textContent=(selected.monthly_savings_tl/1000).toFixed(0)+'K TL';
+  document.getElementById('d-temp').textContent=scenario.ambient.toFixed(1)+'C';
+  document.getElementById('d-load').textContent=scenario.workload.toFixed(0)+'%';
+  document.getElementById('d-inlet').textContent=selected.inlet_temp_c.toFixed(1)+'C';
+  document.getElementById('d-co2').textContent=((selected.co2_tons_year||0)/12).toFixed(1)+'t';
+  document.getElementById('r-chiller-from').textContent=current.chiller_setpoint_c.toFixed(1)+'C';
+  document.getElementById('r-chiller-to').textContent=selected.chiller_setpoint_c.toFixed(1)+'C';
+  document.getElementById('r-fan-from').textContent='%'+current.fan_speed_pct.toFixed(0);
+  document.getElementById('r-fan-to').textContent='%'+selected.fan_speed_pct.toFixed(0);
+  renderChart(current.pue,selected.pue);renderRackMatrix('rack-matrix',current.pue);
+}
+async function postPredict(payload){
+  const response=await fetch(`${API_BASE}/api/predict`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!response.ok)throw new Error('predict failed');
+  return response.json();
+}
+async function runNoQuotaDemo(){
+  const btn=document.getElementById('sample-demo-btn'),txt=document.getElementById('sample-demo-btn-txt');
+  const preview=document.getElementById('demo-payload-preview');
+  btn.disabled=true;txt.textContent='Veri okunuyor...';
+  setDemoStatus('demo-data-source','CSV okunuyor');
+  setDemoStatus('demo-backend-status','Kontrol ediliyor');
+  setDemoStatus('demo-physics-status','Bekleniyor');
+  setDemoStatus('demo-calendar-status','Bekleniyor');
+  if(preview){preview.classList.remove('hidden');preview.textContent='Akis basladi...';}
+
+  try{
+    const [opsText,importantDatesText,healthResponse]=await Promise.all([
+      fetch('sample-data/operations-sensor-sample.csv').then(r=>r.text()),
+      fetch('sample-data/important-dates.csv').then(r=>r.text()),
+      fetch(`${API_BASE}/health`)
+    ]);
+    if(!healthResponse.ok)throw new Error('health failed');
+    const health=await healthResponse.json();
+    setDemoStatus('demo-backend-status',health.status==='ok'?'Baglandi':'Uyari','ok');
+
+    const rows=parseCsvRows(opsText);
+    const metrics={
+      rowCount:rows.length,
+      workload:avg(rows,'Server_Workload(%)'),
+      ambient:avg(rows,'Ambient_Temperature(Ã‚Â°C)')||avg(rows,'Ambient_Temperature(°C)'),
+      inlet:avg(rows,'Inlet_Temperature(Ã‚Â°C)')||avg(rows,'Inlet_Temperature(°C)'),
+      chillerPct:avg(rows,'Chiller_Usage(%)'),
+      fanPct:avg(rows,'AHU_Usage(%)'),
+      itCapacityMw:21
+    };
+    metrics.ambient=avgByHeader(rows,'Ambient_Temperature')||metrics.ambient;
+    metrics.inlet=avgByHeader(rows,'Inlet_Temperature')||metrics.inlet;
+    setDemoStatus('demo-data-source',`${metrics.rowCount} sensor satiri`,metrics.rowCount?'ok':'warn');
+
+    txt.textContent='Fizik motoru...';
+    const basePayload={
+      server_workload_pct:metrics.workload,
+      ambient_temp_c:metrics.ambient,
+      chiller_setpoint_c:pctToChillerSetpoint(metrics.chillerPct),
+      fan_speed_pct:metrics.fanPct,
+      it_capacity_mw:metrics.itCapacityMw
+    };
+    const targetPayload={
+      ...basePayload,
+      chiller_setpoint_c:Math.min(16,basePayload.chiller_setpoint_c+2),
+      fan_speed_pct:Math.max(30,metrics.fanPct*0.72)
+    };
+    const [current,target]=await Promise.all([postPredict(basePayload),postPredict(targetPayload)]);
+    const savings=updateDashboardFromBackend(current,target,metrics);
+    setDemoStatus('demo-physics-status',`PUE ${current.pue.toFixed(2)} -> ${target.pue.toFixed(2)}`,target.pue<current.pue?'ok':'warn');
+
+    txt.textContent='Takvim parse...';
+    const calendarResponse=await fetch(`${API_BASE}/api/calendar/parse`,{method:'POST',headers:{'Content-Type':'text/csv'},body:importantDatesText});
+    if(!calendarResponse.ok)throw new Error('calendar failed');
+    const calendarData=await calendarResponse.json();
+    if(Array.isArray(calendarData.events)&&calendarData.events.length){
+      CALENDAR_EVENTS=calendarData.events.map(ev=>({
+        id:ev.id,
+        name:ev.name,
+        date:ev.date,
+        load:ev.load,
+        severity:ev.level==='high'?'critical':'normal',
+        desc:ev.desc
+      }));
+      renderCalendar();renderCalEventsList();
+    }
+    setDemoStatus('demo-calendar-status',`${calendarData.accepted_count} olay`,calendarData.accepted_count?'ok':'warn');
+
+    txt.textContent='Mock rapor...';
+    const reportPayload={
+      scenario_name:`${APP_STATE.facilityName} ornek veri demosu`,
+      current_pue:current.pue,
+      optimum_pue:target.pue,
+      ambient_temp_c:metrics.ambient,
+      server_workload_pct:metrics.workload,
+      inlet_temp_c:current.inlet_temp_c,
+      current_chiller_pct:metrics.chillerPct,
+      optimized_chiller_pct:Math.max(30,metrics.chillerPct*0.78),
+      current_fan_pct:metrics.fanPct,
+      optimized_fan_pct:Math.max(30,metrics.fanPct*0.72),
+      monthly_savings_tl:savings,
+      co2_savings_ton_month:parseFloat(document.getElementById('d-co2').textContent)||0,
+      physics_status:current.inlet_temp_c<=27?'ok':'warning',
+      physics_notes:[current.ashrae_status||'physics engine checked'],
+      recommended_actions:['Setpoint degisimini kademeli uygula','Inlet sicakligini ilk 30 dakika izle'],
+      use_mock:true
+    };
+    if(preview)preview.textContent='Backend /api/report payload (LLM harcamaz):\n'+JSON.stringify(reportPayload,null,2);
+    const reportResponse=await fetch(`${API_BASE}/api/report`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(reportPayload)});
+    if(!reportResponse.ok)throw new Error('report failed');
+    const reportData=await reportResponse.json();
+    document.getElementById('llm-mode-badge').textContent=`LLM: ${reportData.provider}`;
+    startNemotronStream(reportData.report);
+    txt.textContent='Ornek Veriyle Goster';
+  }catch(error){
+    setDemoStatus('demo-backend-status','Baglanamadi','bad');
+    setDemoStatus('demo-physics-status','Backend 8001 gerekli','warn');
+    if(preview)preview.textContent=`Demo calismadi: ${error.message}\n\nBackend'i baslat:\ncd backend\npython -m uvicorn main:app --host 127.0.0.1 --port 8001 --reload\n\nFrontend'i statik server ile ac:\npython -m http.server 3000 -d frontend`;
+    startNemotronStream("Backend veya statik dosya sunucusuna ulasilamadi. Bu demo NVIDIA kotasi harcamaz; sadece local CSV dosyalarini ve backend'in mock/fizik endpointlerini kullanir. Backend 8001, frontend 3000 portunda calistiginda 'Ornek Veriyle Goster' butonu gercek akisi ekranda gosterecek.");
+  }finally{
+    btn.disabled=false;
+    txt.textContent='Ornek Veriyle Goster';
+  }
 }
 
 async function fetchBackendReport(){
@@ -1002,9 +1372,9 @@ function updateDashboard(p){
   document.getElementById('d-temp').textContent=p.temp+'°C';
   document.getElementById('d-load').textContent=p.load+'%';
   document.getElementById('d-inlet').textContent=Math.round(14+p.temp*0.3+p.load*0.05)+'°C';
-  document.getElementById('r-chiller-from').textContent='%'+p.chiller;
+  document.getElementById('r-chiller-from').textContent=pctToChillerSetpoint(p.chiller).toFixed(1)+'C';
   document.getElementById('r-fan-from').textContent='%'+p.fan;
-  document.getElementById('r-chiller-to').textContent='%'+Math.round(p.chiller*0.8);
+  document.getElementById('r-chiller-to').textContent=Math.min(16,pctToChillerSetpoint(p.chiller)+2).toFixed(1)+'C';
   document.getElementById('r-fan-to').textContent='%'+Math.round(p.fan*0.7);
   renderChart(p.curPUE,p.tgtPUE);renderRackMatrix('rack-matrix',p.curPUE);
 }
