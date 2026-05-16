@@ -1,20 +1,36 @@
-# nemotron.py - NVIDIA Nemotron digital twin controller
+"""NVIDIA Nemotron helpers for ThermaIQ digital twin and reports."""
 
 import json
 import os
 import re
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-import urllib3
 import requests
 from dotenv import load_dotenv
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 load_dotenv()
 
-NVIDIA_API = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "nvidia/nemotron-3-nano-30b-a3b:free"
+try:
+    import urllib3
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+except Exception:
+    urllib3 = None
+
+NVIDIA_API_URL = os.getenv(
+    "NVIDIA_API_URL",
+    os.getenv("NVIDIA_API", "https://integrate.api.nvidia.com/v1/chat/completions"),
+)
+NVIDIA_MODEL = os.getenv(
+    "NVIDIA_MODEL",
+    os.getenv("NVIDIA_MODEL_ID", "nvidia/llama-3.3-nemotron-super-49b-v1"),
+)
+NVIDIA_TIMEOUT_SECONDS = float(os.getenv("NVIDIA_TIMEOUT_SECONDS", "25"))
+NVIDIA_VERIFY_SSL = os.getenv("NVIDIA_VERIFY_SSL", "false").lower() in {"1", "true", "yes"}
+
+
+class NemotronError(RuntimeError):
+    """Raised when NVIDIA report generation fails unexpectedly."""
 
 
 POLICY_SYSTEM_PROMPT = """Sen Türksat Gölbaşı Veri Merkezi'nin Dijital İkiz Kontrolcüsüsün.
@@ -80,12 +96,20 @@ Karar kriterleri:
 }"""
 
 
-def _extract_json(content: str) -> dict:
-    """Parse JSON from plain content, fenced blocks, or text containing one JSON object."""
+REPORT_SYSTEM_PROMPT = """
+Sen ThermaIQ'in veri merkezi enerji danışmanı ajanısın.
+Hedef kitlen teknik tesis müdürü: net, uygulanabilir ve riskleri açıkça söyleyen
+Türkçe operasyon raporları yaz. Verilen sayıları uydurma; sadece girdideki
+metrikleri kullan. ASHRAE güvenlik limitleri, fizik doğrulama sonucu ve tasarruf
+etkisini karar odaklı anlat.
+""".strip()
+
+
+def _extract_json(content: str) -> Dict[str, Any]:
+    """Parse JSON from plain content, fenced blocks, or text containing one object."""
     text = content.strip()
     if "```" in text:
-        blocks = text.split("```")
-        for block in blocks:
+        for block in text.split("```"):
             cleaned = block.strip()
             if cleaned.startswith("json"):
                 cleaned = cleaned[4:].strip()
@@ -102,46 +126,60 @@ def _extract_json(content: str) -> dict:
         return json.loads(match.group(0))
 
 
-def _call_nemotron(system_prompt: str, user_message: str, max_tokens: int = 400) -> dict:
-    """Call NVIDIA Nemotron and parse a JSON object response."""
-    api_key = os.getenv("NVIDIA_API_KEY")
+def _api_key() -> Optional[str]:
+    key = os.getenv("NVIDIA_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    if not key or key in {"nvapi-xxx", "sk-or-v1-xxx"}:
+        return None
+    return key
+
+
+def _provider_headers(api_key: str) -> Dict[str, str]:
+    headers = {
+        "Authorization": "Bearer " + api_key,
+        "Content-Type": "application/json",
+    }
+    if "openrouter.ai" in NVIDIA_API_URL:
+        headers["HTTP-Referer"] = "http://localhost:8001"
+        headers["X-Title"] = "ThermaIQ Data Center Twin"
+    return headers
+
+
+def _call_chat(system_prompt: str, user_message: str, max_tokens: int, temperature: float) -> str:
+    api_key = _api_key()
     if not api_key:
-        raise ValueError("NVIDIA_API_KEY bulunamadı")
+        raise NemotronError("NVIDIA_API_KEY is not configured.")
 
     response = requests.post(
-        NVIDIA_API,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:8000",
-            "X-Title": "ThermaIQ Data Center Twin",
-        },
+        NVIDIA_API_URL,
+        headers=_provider_headers(api_key),
         json={
-            "model": MODEL,
+            "model": NVIDIA_MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
+            "temperature": temperature,
+            "top_p": 0.7,
             "max_tokens": max_tokens,
-            "temperature": 0.2,
         },
-        timeout=30,
-        verify=False,
+        timeout=NVIDIA_TIMEOUT_SECONDS,
+        verify=NVIDIA_VERIFY_SSL,
     )
     response.raise_for_status()
     message = response.json()["choices"][0]["message"]
-
-    content = message.get("content") or ""
-    # Reasoning models (nemotron-nano) may put output in the reasoning field
-    # when max_tokens is exhausted before the final answer block.
-    if not content.strip():
-        reasoning = message.get("reasoning") or ""
-        content = reasoning
-
-    return _extract_json(content.strip())
+    content = (message.get("content") or "").strip()
+    if not content:
+        content = (message.get("reasoning") or "").strip()
+    if not content:
+        raise NemotronError("Empty NVIDIA response.")
+    return content
 
 
-def _fallback_policy(server_workload_pct: float, ambient_temp_c: float) -> dict:
+def _call_nemotron_json(system_prompt: str, user_message: str, max_tokens: int = 500) -> Dict[str, Any]:
+    return _extract_json(_call_chat(system_prompt, user_message, max_tokens, temperature=0.2))
+
+
+def _fallback_policy(server_workload_pct: float, ambient_temp_c: float) -> Dict[str, Any]:
     """Rule-based fallback if API key is missing or the API fails."""
     if ambient_temp_c < 8:
         return {
@@ -189,7 +227,7 @@ def _fallback_policy(server_workload_pct: float, ambient_temp_c: float) -> dict:
     }
 
 
-def _fallback_decision(candidates: list) -> dict:
+def _fallback_decision(candidates: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Rule-based final decision if Nemotron is unavailable."""
     if not candidates:
         return {
@@ -212,23 +250,16 @@ def _fallback_decision(candidates: list) -> dict:
         return _fallback_decision([])
 
     risk_rank = {"low": 0, "medium": 1, "high": 2}
-    best = sorted(
-        valid,
-        key=lambda c: (
-            risk_rank.get(c.get("risk_level", "high"), 2),
-            c.get("pue", 9),
-        ),
-    )[0]
+    best = sorted(valid, key=lambda c: (risk_rank.get(c.get("risk_level", "high"), 2), c.get("pue", 9)))[0]
     rank = best["rank"]
     decision = "APPROVE" if best.get("risk_level") in ("low", "medium") else "REVIEW"
-    ashrae = "PASS" if best.get("risk_level") != "high" else "WARNING"
 
     return {
         "decision": decision,
         "selected_candidate_rank": rank,
         "risk_level": best.get("risk_level", "medium"),
         "standards_check": {
-            "ashrae": ashrae,
+            "ashrae": "PASS" if best.get("risk_level") != "high" else "WARNING",
             "pue": "IMPROVED",
             "bms": "HUMAN_APPROVAL_REQUIRED",
         },
@@ -250,31 +281,27 @@ def _fallback_decision(candidates: list) -> dict:
     }
 
 
-def _validate_policy_shape(policy: dict, fallback: dict) -> dict:
-    """Keep Nemotron output structurally compatible with optimizer.py."""
+def _validate_policy_shape(policy: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(policy, dict):
         return fallback
-
     required = ("strategy", "objective_weights", "search_space", "risk_policy")
     if not all(key in policy for key in required):
         return fallback
-
     policy.setdefault("reason_tr", fallback.get("reason_tr", ""))
     policy["source"] = "nemotron"
     return policy
 
 
-def _validate_decision_shape(decision: dict, candidates: list, fallback: dict) -> dict:
+def _validate_decision_shape(
+    decision: Dict[str, Any], candidates: List[Dict[str, Any]], fallback: Dict[str, Any]
+) -> Dict[str, Any]:
     if not isinstance(decision, dict):
         return fallback
-
     ranks = {c.get("rank") for c in candidates}
-    selected_rank = decision.get("selected_candidate_rank")
-    if selected_rank not in ranks:
+    if decision.get("selected_candidate_rank") not in ranks:
         return fallback
     if decision.get("decision") not in ("APPROVE", "REVIEW", "REJECT"):
         return fallback
-
     decision.setdefault("source", "nemotron")
     return decision
 
@@ -286,7 +313,7 @@ def generate_optimization_policy(
     current_inlet_temp: float,
     hour: int = 12,
     month: int = 7,
-) -> dict:
+) -> Dict[str, Any]:
     """Nemotron Call #1: strategy planner."""
     fallback = _fallback_policy(server_workload_pct, ambient_temp_c)
     user_msg = f"""Mevcut tesis durumu:
@@ -299,30 +326,31 @@ def generate_optimization_policy(
 Bu duruma uygun optimizasyon politikasını JSON olarak üret."""
 
     try:
-        policy = _call_nemotron(POLICY_SYSTEM_PROMPT, user_msg, max_tokens=1200)
+        policy = _call_nemotron_json(POLICY_SYSTEM_PROMPT, user_msg, max_tokens=1200)
         return _validate_policy_shape(policy, fallback)
     except Exception as exc:
         print(f"[Nemotron policy fallback] {exc}")
         return fallback
 
 
-def generate_final_decision(current: dict, candidates: list, policy: dict) -> dict:
+def generate_final_decision(
+    current: Dict[str, Any], candidates: List[Dict[str, Any]], policy: Dict[str, Any]
+) -> Dict[str, Any]:
     """Nemotron Call #2: operations controller."""
     fallback = _fallback_decision(candidates)
-    candidates_summary = []
-    for candidate in candidates:
-        candidates_summary.append(
-            {
-                "rank": candidate["rank"],
-                "pue": candidate["pue"],
-                "chiller_setpoint_c": candidate["chiller_setpoint_c"],
-                "fan_speed_pct": candidate["fan_speed_pct"],
-                "inlet_temp_c": candidate["inlet_temp_c"],
-                "ashrae_status": candidate["ashrae_status"],
-                "risk_level": candidate["risk_level"],
-                "monthly_savings_tl": candidate["monthly_savings_tl"],
-            }
-        )
+    candidates_summary = [
+        {
+            "rank": candidate["rank"],
+            "pue": candidate["pue"],
+            "chiller_setpoint_c": candidate["chiller_setpoint_c"],
+            "fan_speed_pct": candidate["fan_speed_pct"],
+            "inlet_temp_c": candidate["inlet_temp_c"],
+            "ashrae_status": candidate["ashrae_status"],
+            "risk_level": candidate["risk_level"],
+            "monthly_savings_tl": candidate["monthly_savings_tl"],
+        }
+        for candidate in candidates
+    ]
 
     user_msg = f"""Mevcut durum:
 PUE: {current['pue']}, Inlet: {current['inlet_temp_c']}°C, ASHRAE: {current['ashrae_status']}
@@ -336,55 +364,175 @@ Top 3 aday:
 En uygun adayı seç ve operasyon kararını JSON olarak ver."""
 
     try:
-        decision = _call_nemotron(DECISION_SYSTEM_PROMPT, user_msg, max_tokens=1500)
+        decision = _call_nemotron_json(DECISION_SYSTEM_PROMPT, user_msg, max_tokens=1500)
         return _validate_decision_shape(decision, candidates, fallback)
     except Exception as exc:
         print(f"[Nemotron decision fallback] {exc}")
         return fallback
 
 
-if __name__ == "__main__":
-    print("=== POLICY TEST: Yaz Ogle ===")
-    p1 = generate_optimization_policy(85, 35, 1.42, 25.3, hour=14, month=7)
-    print(json.dumps(p1, indent=2, ensure_ascii=False))
+def _fmt_money(value: Optional[float]) -> str:
+    if value is None:
+        return "hesaplanmadı"
+    return f"{value:,.0f} TL".replace(",", ".")
 
-    print("\n=== POLICY TEST: Kis Gece ===")
-    p2 = generate_optimization_policy(45, -2, 1.15, 18.5, hour=3, month=1)
-    print(json.dumps(p2, indent=2, ensure_ascii=False))
 
-    print("\n=== DECISION TEST ===")
-    mock_current = {"pue": 1.42, "inlet_temp_c": 25.3, "ashrae_status": "ASHRAE-Allowable"}
-    mock_candidates = [
-        {
-            "rank": 1,
-            "pue": 1.31,
-            "chiller_setpoint_c": 11.5,
-            "fan_speed_pct": 70,
-            "inlet_temp_c": 25.8,
-            "ashrae_status": "ASHRAE-Allowable",
-            "risk_level": "medium",
-            "monthly_savings_tl": 1500000,
-        },
-        {
-            "rank": 2,
-            "pue": 1.33,
-            "chiller_setpoint_c": 10.2,
-            "fan_speed_pct": 75,
-            "inlet_temp_c": 24.9,
-            "ashrae_status": "ASHRAE-Allowable",
-            "risk_level": "low",
-            "monthly_savings_tl": 1380000,
-        },
-        {
-            "rank": 3,
-            "pue": 1.35,
-            "chiller_setpoint_c": 9.0,
-            "fan_speed_pct": 80,
-            "inlet_temp_c": 24.1,
-            "ashrae_status": "ASHRAE-Recommended",
-            "risk_level": "low",
-            "monthly_savings_tl": 1250000,
-        },
-    ]
-    d = generate_final_decision(mock_current, mock_candidates, p1)
-    print(json.dumps(d, indent=2, ensure_ascii=False))
+def _fmt_pct(value: Optional[float]) -> str:
+    if value is None:
+        return "belirtilmedi"
+    return f"%{value:.0f}"
+
+
+def normalize_report_input(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """Create a stable report payload from optimizer/frontend raw values."""
+    current_pue = float(raw["current_pue"])
+    optimum_pue = float(raw["optimum_pue"])
+    pue_delta = current_pue - optimum_pue
+    improvement_pct = (pue_delta / current_pue) * 100 if current_pue else 0.0
+
+    return {
+        "scenario_name": raw.get("scenario_name", "Canlı operasyon"),
+        "current_pue": current_pue,
+        "optimum_pue": optimum_pue,
+        "pue_delta": pue_delta,
+        "improvement_pct": improvement_pct,
+        "ambient_temp_c": raw.get("ambient_temp_c"),
+        "server_workload_pct": raw.get("server_workload_pct"),
+        "inlet_temp_c": raw.get("inlet_temp_c"),
+        "current_chiller_pct": raw.get("current_chiller_pct"),
+        "optimized_chiller_pct": raw.get("optimized_chiller_pct"),
+        "current_fan_pct": raw.get("current_fan_pct"),
+        "optimized_fan_pct": raw.get("optimized_fan_pct"),
+        "monthly_savings_tl": raw.get("monthly_savings_tl", raw.get("savings_tl")),
+        "co2_savings_ton_month": raw.get("co2_savings_ton_month"),
+        "physics_status": raw.get("physics_status", "not_checked"),
+        "physics_notes": raw.get("physics_notes", []),
+        "anomalies": raw.get("anomalies", []),
+        "recommended_actions": raw.get("recommended_actions", []),
+    }
+
+
+def validate_report_payload(payload: Dict[str, Any]) -> List[str]:
+    """Return human-readable validation warnings without blocking the demo."""
+    warnings = []
+    if not 1.0 <= payload["current_pue"] <= 3.0:
+        warnings.append("Mevcut PUE beklenen veri merkezi aralığının dışında.")
+    if not 1.0 <= payload["optimum_pue"] <= 3.0:
+        warnings.append("Optimum PUE beklenen veri merkezi aralığının dışında.")
+    if payload["optimum_pue"] > payload["current_pue"]:
+        warnings.append("Optimum PUE mevcut PUE'den yüksek görünüyor.")
+    inlet_temp = payload.get("inlet_temp_c")
+    if inlet_temp is not None and float(inlet_temp) > 27.0:
+        warnings.append("ASHRAE TC 9.9 sunucu giriş sıcaklığı limiti aşılmış olabilir.")
+    if payload.get("physics_status") not in {"ok", "warning", "rejected", "not_checked"}:
+        warnings.append("Fizik doğrulama durumu tanınmıyor.")
+    return warnings
+
+
+def build_report_prompt(payload: Dict[str, Any], validation_warnings: List[str]) -> str:
+    """Turn raw backend metrics into a constrained Nemotron prompt."""
+    return f"""
+Aşağıdaki ThermaIQ optimizasyon çıktısını tesis müdürüne yönelik 3 paragraflık
+Türkçe operasyon raporuna dönüştür.
+
+Kurallar:
+- İlk paragraf mevcut durum ve PUE iyileşmesini açıklasın.
+- İkinci paragraf chiller/fan ayarlarını ve fizik/ASHRAE doğrulamasını anlatsın.
+- Üçüncü paragraf TL tasarruf, CO2 etkisi ve uygulanacak aksiyonu versin.
+- Sonunda "Öncelikli aksiyon:" ile tek cümlelik net karar yaz.
+- Verilmeyen metrikleri uydurma.
+
+Veri:
+- Senaryo: {payload['scenario_name']}
+- Mevcut PUE: {payload['current_pue']:.2f}
+- Önerilen PUE: {payload['optimum_pue']:.2f}
+- PUE iyileşmesi: {payload['improvement_pct']:.1f}%
+- Dış sıcaklık: {payload.get('ambient_temp_c', 'belirtilmedi')} C
+- Sunucu yükü: {_fmt_pct(payload.get('server_workload_pct'))}
+- Inlet sıcaklığı: {payload.get('inlet_temp_c', 'belirtilmedi')} C
+- Chiller: {_fmt_pct(payload.get('current_chiller_pct'))} -> {_fmt_pct(payload.get('optimized_chiller_pct'))}
+- Fan/AHU: {_fmt_pct(payload.get('current_fan_pct'))} -> {_fmt_pct(payload.get('optimized_fan_pct'))}
+- Aylık tasarruf: {_fmt_money(payload.get('monthly_savings_tl'))}
+- CO2 etkisi: {payload.get('co2_savings_ton_month', 'hesaplanmadı')} ton/ay
+- Fizik doğrulama: {payload.get('physics_status')}
+- Fizik notları: {payload.get('physics_notes') or 'yok'}
+- Anomali notları: {payload.get('anomalies') or 'yok'}
+- Önerilen aksiyonlar: {payload.get('recommended_actions') or 'yok'}
+- Veri uyarıları: {validation_warnings or 'yok'}
+""".strip()
+
+
+def build_local_report(payload: Dict[str, Any], validation_warnings: List[str]) -> str:
+    """Deterministic fallback used when API key/network is unavailable."""
+    pue_sentence = (
+        f"{payload['scenario_name']} senaryosunda mevcut PUE {payload['current_pue']:.2f}, "
+        f"önerilen çalışma noktasında {payload['optimum_pue']:.2f}. "
+        f"Bu, yaklaşık %{payload['improvement_pct']:.1f} iyileşme anlamına geliyor."
+    )
+    thermal_sentence = (
+        f"Dış sıcaklık {payload.get('ambient_temp_c', 'belirtilmedi')} C ve sunucu yükü "
+        f"{_fmt_pct(payload.get('server_workload_pct'))}. Chiller ayarı "
+        f"{_fmt_pct(payload.get('current_chiller_pct'))} seviyesinden "
+        f"{_fmt_pct(payload.get('optimized_chiller_pct'))} seviyesine, fan/AHU ayarı "
+        f"{_fmt_pct(payload.get('current_fan_pct'))} seviyesinden "
+        f"{_fmt_pct(payload.get('optimized_fan_pct'))} seviyesine çekilebilir."
+    )
+    savings_sentence = (
+        f"Aylık beklenen tasarruf {_fmt_money(payload.get('monthly_savings_tl'))}; "
+        f"CO2 etkisi {payload.get('co2_savings_ton_month', 'hesaplanmadı')} ton/ay. "
+        f"Fizik doğrulama durumu: {payload.get('physics_status')}."
+    )
+    warning_text = ""
+    if validation_warnings:
+        warning_text = " Veri uyarısı: " + " ".join(validation_warnings)
+
+    return (
+        f"{pue_sentence}\n\n"
+        f"{thermal_sentence} ASHRAE inlet limiti için mevcut inlet sıcaklığı "
+        f"{payload.get('inlet_temp_c', 'belirtilmedi')} C olarak izlenmelidir.{warning_text}\n\n"
+        f"{savings_sentence}\n\n"
+        "Öncelikli aksiyon: Önerilen chiller ve fan setlerini kademeli uygulayın, "
+        "ilk 30 dakika inlet sıcaklığı ve PUE trendini canlı takip edin."
+    )
+
+
+def call_nemotron(prompt: str) -> str:
+    """Call Nemotron for free-form report text."""
+    try:
+        return _call_chat(REPORT_SYSTEM_PROMPT, prompt, max_tokens=650, temperature=0.2).strip()
+    except requests.RequestException as exc:
+        raise NemotronError(str(exc)) from exc
+
+
+def generate_operational_report(raw_payload: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
+    """Generate a Turkish operational report from raw optimizer output."""
+    payload = normalize_report_input(raw_payload)
+    validation_warnings = validate_report_payload(payload)
+    prompt = build_report_prompt(payload, validation_warnings)
+
+    provider = "nvidia-nemotron"
+    model = NVIDIA_MODEL
+    api_warning = None
+
+    if use_mock:
+        provider = "local-template"
+        model = "thermaiq-local-template"
+        report = build_local_report(payload, validation_warnings)
+    else:
+        try:
+            report = call_nemotron(prompt)
+        except (NemotronError, requests.RequestException) as exc:
+            provider = "local-template"
+            model = "thermaiq-local-template"
+            api_warning = str(exc)
+            report = build_local_report(payload, validation_warnings)
+
+    return {
+        "provider": provider,
+        "model": model,
+        "report": report,
+        "validated": not validation_warnings,
+        "validation_warnings": validation_warnings,
+        "api_warning": api_warning,
+        "source_metrics": payload,
+    }

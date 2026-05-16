@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThermaIQ — Veri Merkezi AI Soğutma Optimizasyonu</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=latin-ext" rel="stylesheet">
+<style>
+  :root{--navy:#46536a;--navy-light:#5d6b84;--green:#4f7d72;--green-dark:#3f655c;--amber:#b98a45;--red:#b65f55;--orange:#b97855;--bg:#111620;--panel:#171d28;--panel-soft:#1d2531;--line:rgba(207,216,226,0.12);}
+  *{font-family:"Inter","Segoe UI",Arial,sans-serif;box-sizing:border-box;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ── LOGO ANIMATIONS ── */
+  /* Orijinal alev yerine: rack dışına iki yandan süzülen mavi buhar */
+  .logo-flame-orig{animation:rackGlow 3s ease-in-out infinite;}
+  @keyframes rackGlow{0%,100%{opacity:1}50%{opacity:0.78}}
+
+  /* Buhar stream'leri — sol ve sağ kanattan çıkıyor, çok yumuşak */
+  .vapor-L1{animation:vaporLeft  6s ease-in-out infinite;}
+  .vapor-L2{animation:vaporLeft  6s ease-in-out 1.8s infinite;}
+  .vapor-R1{animation:vaporRight 6s ease-in-out 0.9s infinite;}
+  .vapor-R2{animation:vaporRight 6s ease-in-out 2.7s infinite;}
+  @keyframes vaporLeft{
+    0%  {opacity:0;transform:translate(0,0);}
+    25% {opacity:0.45;}
+    70% {opacity:0.18;transform:translate(-9px,-7px);}
+    100%{opacity:0;transform:translate(-14px,-12px);}
+  }
+  @keyframes vaporRight{
+    0%  {opacity:0;transform:translate(0,0);}
+    25% {opacity:0.45;}
+    70% {opacity:0.18;transform:translate(9px,-7px);}
+    100%{opacity:0;transform:translate(14px,-12px);}
+  }
+
+  /* Sidebar logo buharı — küçük ölçek */
+  .svap-L{animation:svapLeft  5s ease-in-out infinite;}
+  .svap-R{animation:svapRight 5s ease-in-out 1.5s infinite;}
+  @keyframes svapLeft {0%{opacity:0;transform:translate(0,0)}30%{opacity:0.4}100%{opacity:0;transform:translate(-7px,-9px)}}
+  @keyframes svapRight{0%{opacity:0;transform:translate(0,0)}30%{opacity:0.4}100%{opacity:0;transform:translate(7px,-9px)}}
+
+  /* AUTH */
+  #auth-screen{background:linear-gradient(180deg,#121821 0%,#0f141c 100%);}
+  .auth-card{background:rgba(23,29,40,0.94);border:1px solid var(--line);backdrop-filter:blur(16px);}
+  .auth-tab{transition:all .25s;cursor:pointer;}
+  .auth-tab.active{background:rgba(0,51,160,0.5);color:#fff;border-color:rgba(0,51,160,0.7);}
+  .auth-input{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;outline:none;transition:border-color .2s;}
+  .auth-input:focus{border-color:rgba(0,51,160,0.8);background:rgba(0,51,160,0.1);}
+  .auth-input::placeholder{color:rgba(255,255,255,0.3);}
+  .contract-box{background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);max-height:140px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,51,160,0.5) transparent;}
+  .btn-primary{background:linear-gradient(135deg,#0033A0,#1a4dbf);transition:all .2s;box-shadow:0 4px 15px rgba(0,51,160,0.35);}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,51,160,0.5);}
+  .btn-primary:disabled{opacity:0.4;transform:none;cursor:not-allowed;}
+
+  /* SIDEBAR */
+  #sidebar{background:#0a0f1e;border-right:1px solid rgba(255,255,255,0.06);}
+  .nav-item{transition:all .2s;border-left:3px solid transparent;cursor:pointer;}
+  .nav-item:hover{background:rgba(255,255,255,0.04);color:#e2e8f0;}
+  .nav-item.active{background:rgba(0,51,160,0.2);border-left-color:#0033A0;color:#60a5fa;}
+  .regime-btn{transition:all .2s;cursor:pointer;}
+  .regime-btn.active-auto{background:rgba(0,176,79,0.2);border-color:#00B04F;color:#00cc5c;}
+  .regime-btn.active-manual{background:rgba(245,158,11,0.2);border-color:#F59E0B;color:#fbbf24;}
+
+  #main-content{background:#0d1327;}
+
+  .metric-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;transition:all .5s cubic-bezier(.4,0,.2,1);}
+  .metric-card.scanning{border-color:#00B04F;transform:scale(1.025);box-shadow:0 0 24px rgba(0,176,79,0.25),0 0 60px rgba(0,176,79,0.08);}
+
+  .anomaly-badge{animation:anomalyPulse 1.5s ease-in-out infinite;}
+  @keyframes anomalyPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+
+  .cal-day{transition:all .2s;}
+  .cal-day.critical{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);}
+  .cal-day.normal{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);}
+  .cal-day.empty{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}
+
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
+
+  .page{display:none;animation:fadeIn .3s ease;}
+  .page.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .form-input{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;outline:none;transition:border-color .2s;}
+  .form-input:focus{border-color:rgba(0,51,160,0.7);}
+  .form-input::placeholder{color:rgba(255,255,255,0.25);}
+  select.form-input option{background:#1a2035;color:#e2e8f0;}
+
+  #report-cursor{display:inline-block;width:2px;height:14px;background:#00B04F;animation:blink 1s infinite;vertical-align:middle;margin-left:1px;}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+  .chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;letter-spacing:.5px;padding:3px 9px;border-radius:20px;}
+  .pbar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
+  .pbar-fill{height:100%;background:linear-gradient(90deg,#0033A0,#00B04F);border-radius:2px;transition:width .3s;}
+  .rack-cell{transition:background-color .6s ease;border-radius:3px;}
+
+  /* Muted operational palette over Tailwind utility colors */
+  .text-blue-300,.text-blue-400{color:#9fb0c7!important;}
+  .text-green-300,.text-green-400{color:#9fc2ba!important;}
+  .text-amber-300,.text-amber-400{color:#d7b377!important;}
+  .text-red-300,.text-red-400{color:#d08b83!important;}
+  .bg-blue-500\/10,.bg-blue-600\/20,.bg-blue-600\/30{background-color:rgba(70,83,106,0.24)!important;}
+  .bg-blue-600{background-color:#5d6b84!important;}
+  .bg-green-500\/10,.bg-green-500\/20{background-color:rgba(79,125,114,0.18)!important;}
+  .bg-green-400,.bg-green-500\/60{background-color:#6f968c!important;}
+  .bg-amber-400,.bg-amber-500\/60{background-color:#b98a45!important;}
+  .bg-red-500\/70{background-color:#b65f55!important;}
+  .bg-amber-500\/5,.bg-amber-500\/10{background-color:rgba(185,138,69,0.12)!important;}
+  .bg-red-500\/5,.bg-red-500\/10{background-color:rgba(182,95,85,0.12)!important;}
+  .border-blue-500\/15,.border-blue-500\/20,.border-blue-500\/40{border-color:rgba(142,154,174,0.28)!important;}
+  .border-green-500\/20,.border-green-500\/30{border-color:rgba(111,150,140,0.32)!important;}
+  .border-amber-500\/15,.border-amber-500\/20{border-color:rgba(185,138,69,0.28)!important;}
+  .border-red-500\/15,.border-red-500\/20{border-color:rgba(182,95,85,0.28)!important;}
+  .accent-blue-500,.accent-blue-600{accent-color:#6f7f96!important;}
+  .rounded-xl{border-radius:10px!important;}
+</style>
+</head>
+<body class="text-slate-300 overflow-hidden">
+
+<!--  AUTH  -->
+<div id="auth-screen" class="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
+  <div class="auth-card rounded-2xl p-6 w-full max-w-md my-6">
+
+    <!-- LOGO -->
+    <div class="flex flex-col items-center mb-5">
+      <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+        <defs>
+          <linearGradient id="logoGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%"  stop-color="#b97855"/>
+            <stop offset="35%" stop-color="#b98a45"/>
+            <stop offset="65%" stop-color="#46536a"/>
+            <stop offset="100%" stop-color="#4f7d72"/>
+          </linearGradient>
+          <linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#b98a45" stop-opacity="0.9"/>
+            <stop offset="50%"  stop-color="#46536a"/>
+            <stop offset="100%" stop-color="#4f7d72"/>
+          </linearGradient>
+          <!-- Mavi buhar gradienti -->
+          <linearGradient id="vapGradL" x1="1" y1="0" x2="0" y2="0">
+            <stop offset="0%"   stop-color="#38bdf8" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="vapGradR" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#38bdf8" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Server rack -->
+        <rect x="18" y="12" width="36" height="48" rx="4" fill="none" stroke="url(#logoGrad)" stroke-width="2"/>
+        <rect class="logo-flame-orig" x="22" y="18" width="28" height="5" rx="1.5" fill="rgba(185,120,85,0.3)"  stroke="#b97855" stroke-width="0.8"/>
+        <rect class="logo-flame-orig" x="22" y="27" width="28" height="5" rx="1.5" fill="rgba(185,138,69,0.2)"  stroke="#b98a45" stroke-width="0.8"/>
+        <rect class="logo-flame-orig" x="22" y="36" width="28" height="5" rx="1.5" fill="rgba(70,83,106,0.25)"   stroke="#46536a" stroke-width="0.8"/>
+        <rect class="logo-flame-orig" x="22" y="45" width="28" height="5" rx="1.5" fill="rgba(79,125,114,0.25)"   stroke="#4f7d72" stroke-width="0.8"/>
+
+        <!-- Corner dots -->
+        <circle cx="26" cy="21" r="1.5" fill="#b97855" opacity="0.9"/>
+        <circle cx="26" cy="30" r="1.5" fill="#b98a45" opacity="0.8"/>
+        <circle cx="26" cy="39" r="1.5" fill="#46536a" opacity="0.9"/>
+        <circle cx="26" cy="48" r="1.5" fill="#4f7d72" opacity="0.9"/>
+
+        <!-- Cool wave -->
+        <path d="M10 36 Q20 28 36 36 Q52 44 62 36" fill="none" stroke="url(#waveGrad)" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Mavi buhar -->
+        <path class="vapor-L1" d="M18 22 C12 20 7 18 4 15"   fill="none" stroke="url(#vapGradL)" stroke-width="1.6" stroke-linecap="round"/>
+        <path class="vapor-L2" d="M18 34 C12 33 8 30 5 27"   fill="none" stroke="url(#vapGradL)" stroke-width="1.3" stroke-linecap="round"/>
+        <path class="vapor-R1" d="M54 22 C60 20 65 18 68 15" fill="none" stroke="url(#vapGradR)" stroke-width="1.6" stroke-linecap="round"/>
+        <path class="vapor-R2" d="M54 34 C60 33 64 30 67 27" fill="none" stroke="url(#vapGradR)" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+
+      <h1 class="text-2xl font-bold text-white mt-2 tracking-tight">ThermaIQ</h1>
+      <p class="text-xs text-slate-500 mt-1 tracking-widest uppercase">Veri Merkezi AI Soğutma Optimizasyonu</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-4 p-1 bg-black/20 rounded-lg">
+      <button class="auth-tab flex-1 text-sm font-semibold py-2 px-4 rounded-md border border-transparent text-slate-400" id="tab-login" onclick="switchAuthTab('login')">Giriş Yap</button>
+      <button class="auth-tab active flex-1 text-sm font-semibold py-2 px-4 rounded-md border border-transparent" id="tab-register" onclick="switchAuthTab('register')">Kayıt Ol</button>
+    </div>
+
+    <!-- Login -->
+    <div id="login-form" class="hidden">
+      <div class="space-y-3">
+        <input class="auth-input w-full px-4 py-3 rounded-lg text-sm" type="email" placeholder="E-posta adresi">
+        <input class="auth-input w-full px-4 py-3 rounded-lg text-sm" type="password" placeholder="Şifre">
+        <button class="btn-primary w-full py-3 rounded-lg text-sm font-semibold text-white mt-2" onclick="attemptLogin()">
+          <i class="fas fa-sign-in-alt mr-2"></i>Giriş Yap
+        </button>
+        <div id="login-error" class="hidden rounded-lg p-3 text-xs text-red-300 bg-red-500/10 border border-red-500/20 text-center mt-2">
+          Hackathon demosu için lütfen önce 'Kayıt Ol' sekmesinden tesisinizi oluşturun.
+        </div>
+      </div>
+      <p class="text-center text-xs text-slate-600 mt-4">Demo giriş — herhangi bir değer girin</p>
+    </div>
+
+    <!-- Register -->
+    <div id="register-form">
+      <div class="space-y-2.5">
+        <div class="grid grid-cols-2 gap-3">
+          <input class="auth-input w-full px-4 py-3 rounded-lg text-sm" id="reg-first-name" type="text" placeholder="Ad" value="Deniz">
+          <input class="auth-input w-full px-4 py-3 rounded-lg text-sm" id="reg-last-name" type="text" placeholder="Soyad" value="Kaya">
+        </div>
+        <input class="auth-input w-full px-4 py-3 rounded-lg text-sm" id="reg-email" type="email" placeholder="Kurumsal e-posta" value="deniz.kaya@nova-dc.example">
+        <input class="auth-input w-full px-4 py-3 rounded-lg text-sm" id="reg-facility" type="text" placeholder="Tesis / Şirket Adı" value="NovaEdge Ankara Veri Merkezi">
+        <select class="auth-input w-full px-4 py-3 rounded-lg text-sm" id="reg-role">
+          <option value="Veri Merkezi Mühendisi">Veri Merkezi Mühendisi</option>
+          <option value="Tesis Yöneticisi">Tesis Yöneticisi</option>
+          <option value="Enerji Operasyon">Enerji Operasyon</option>
+          <option value="Demo Kullanıcı">Demo Kullanıcı</option>
+        </select>
+        <input class="auth-input w-full px-4 py-3 rounded-lg text-sm" id="reg-password" type="password" placeholder="Demo şifre" value="demo1234">
+        <div class="rounded-lg p-3 text-xs text-blue-200 border border-blue-500/20 bg-blue-500/10">
+          Demo onboarding: hesap yerelde tutulur, gerçek kullanıcı veritabanı veya e-posta doğrulaması çalışmaz.
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 mb-2 font-medium">Kullanıcı, Veri Güvenliği ve Gizlilik Sözleşmesi</p>
+          <div class="contract-box rounded-lg p-3 text-xs text-slate-400 leading-relaxed">
+            <p class="text-slate-300 font-semibold mb-2">ThermaIQ Platform Kullanım Sözleşmesi</p>
+            <p class="mb-2">Bu sözleşme, ThermaIQ platformunu kullanan kurum ve bireyler için geçerlidir. Platforma erişim sağlayarak aşağıdaki şartları kabul etmiş sayılırsınız.</p>
+            <p class="font-medium text-slate-300 mb-1">1. Veri İşleme ve Güvenlik</p>
+            <p class="mb-2">ThermaIQ, yüklediğiniz operasyonel verileri yalnızca platformun AI optimizasyon modellerini iyileştirmek amacıyla kullanır. Verileriniz KVKK ile GDPR uyumlu sunucularda depolanır. Üçüncü taraflarla paylaşılmaz.</p>
+            <p class="font-medium text-slate-300 mb-1">2. Enerji Optimizasyon Önerileri</p>
+            <p class="mb-2">ThermaIQ'nun AI modelleri istatistiksel öngörüler sunar. Nihai kararlar tesis müdürünün sorumluluğundadır. ASHRAE TC 9.9 uyumlu öneri eşikleri aşılmadan yapılacak değişiklikler güvenli kabul edilir.</p>
+            <p class="font-medium text-slate-300 mb-1">3. Fikri Mülkiyet</p>
+            <p class="mb-2">XGBoost tabanlı tahmin modelleri, Optuna optimizasyon motoru ve NVIDIA Nemotron entegrasyonu dahil tüm bileşenler telif hakkı kapsamındadır.</p>
+            <p class="font-medium text-slate-300 mb-1">4. Kişisel Verilerin Korunması</p>
+            <p>6698 sayılı KVKK kapsamında talepleriniz için kvkk@thermaiq.ai adresine başvurabilirsiniz.</p>
+          </div>
+          <label class="flex items-start gap-3 mt-3 cursor-pointer group">
+            <input type="checkbox" id="contract-check" class="mt-0.5 w-4 h-4 rounded accent-blue-600" onchange="toggleRegisterBtn()">
+            <span class="text-xs text-slate-400 group-hover:text-slate-300 transition-colors">Sözleşme şartlarını okudum ve kabul ediyorum</span>
+          </label>
+        </div>
+        <button class="btn-primary w-full py-3 rounded-lg text-sm font-semibold text-white" id="register-btn" disabled onclick="registerAndEnterApp()">
+          <i class="fas fa-user-plus mr-2"></i>Hesap Oluştur & Giriş Yap
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!--  -->
+
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="app" class="hidden fixed inset-0 flex">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="w-60 flex-shrink-0 flex flex-col h-full overflow-y-auto">
+
+    <!-- LOGO — Sidebar (orijinal yapı küçük, buhar animasyonlu) -->
+    <div class="flex items-center gap-2 px-5 py-4 border-b border-white/5">
+      <svg width="26" height="26" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+        <defs>
+          <linearGradient id="sLogoGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#F97316"/>
+            <stop offset="50%"  stop-color="#0033A0"/>
+            <stop offset="100%" stop-color="#00B04F"/>
+          </linearGradient>
+          <linearGradient id="sVapL" x1="1" y1="0" x2="0" y2="0">
+            <stop offset="0%"   stop-color="#38bdf8" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="sVapR" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="#38bdf8" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <rect x="18" y="12" width="36" height="48" rx="4" fill="none" stroke="url(#sLogoGrad)" stroke-width="2.5"/>
+        <rect x="22" y="18" width="28" height="5" rx="1.5" fill="rgba(185,120,85,0.3)" stroke="#b97855" stroke-width="0.8"/>
+        <rect x="22" y="27" width="28" height="5" rx="1.5" fill="rgba(185,138,69,0.2)" stroke="#b98a45" stroke-width="0.8"/>
+        <rect x="22" y="36" width="28" height="5" rx="1.5" fill="rgba(70,83,106,0.25)" stroke="#46536a" stroke-width="0.8"/>
+        <rect x="22" y="45" width="28" height="5" rx="1.5" fill="rgba(79,125,114,0.25)" stroke="#4f7d72" stroke-width="0.8"/>
+        <circle cx="26" cy="21" r="1.5" fill="#b97855" opacity="0.9"/>
+        <circle cx="26" cy="30" r="1.5" fill="#b98a45" opacity="0.8"/>
+        <circle cx="26" cy="39" r="1.5" fill="#46536a" opacity="0.9"/>
+        <circle cx="26" cy="48" r="1.5" fill="#4f7d72" opacity="0.9"/>
+        <!-- Buhar sol -->
+        <path class="svap-L" d="M18 22 C13 20 9 17 6 14" fill="none" stroke="url(#sVapL)" stroke-width="1.5" stroke-linecap="round"/>
+        <path class="svap-L" d="M18 34 C13 32 9 30 6 27" fill="none" stroke="url(#sVapL)" stroke-width="1.2" stroke-linecap="round" style="animation-delay:2s"/>
+        <!-- Buhar sağ -->
+        <path class="svap-R" d="M54 22 C59 20 63 17 66 14" fill="none" stroke="url(#sVapR)" stroke-width="1.5" stroke-linecap="round"/>
+        <path class="svap-R" d="M54 34 C59 32 63 30 66 27" fill="none" stroke="url(#sVapR)" stroke-width="1.2" stroke-linecap="round" style="animation-delay:2.5s"/>
+      </svg>
+      <span class="text-white font-bold text-base tracking-tight">ThermaIQ</span>
+      <span class="ml-auto flex items-center gap-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+        <span class="text-xs text-green-400 mono">CANLI</span>
+      </span>
+    </div>
+
+    <!-- Regime -->
+    <div class="px-4 py-3 border-b border-white/5">
+      <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Kontrol Rejimi</p>
+      <div class="grid grid-cols-2 gap-1.5">
+        <button class="regime-btn active-auto text-xs font-semibold py-2 px-2 rounded-lg border border-green-500/30 text-green-400" id="regime-auto" onclick="setRegime('auto')">
+          <i class="fas fa-robot mr-1"></i>AI Otonom
+        </button>
+        <button class="regime-btn text-xs font-semibold py-2 px-2 rounded-lg border border-white/10 text-slate-500" id="regime-manual" onclick="setRegime('manual')">
+          <i class="fas fa-sliders-h mr-1"></i>Manuel Sürüş
+        </button>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-3 space-y-0.5">
+      <p class="text-xs text-slate-600 font-semibold uppercase tracking-wider px-2 py-1 mt-1">Paneller</p>
+      <div class="nav-item active px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm" onclick="showPage('dashboard',this)">
+        <i class="fas fa-tachometer-alt w-4 text-center"></i><span>Dashboard</span>
+      </div>
+      <div class="nav-item px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm text-slate-500" onclick="showPage('simulator',this)">
+        <i class="fas fa-sliders-h w-4 text-center"></i><span>Simülatör</span>
+      </div>
+      <div class="nav-item px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm text-slate-500" onclick="showPage('calendar',this)">
+        <i class="fas fa-calendar-alt w-4 text-center"></i><span>Kritik Takvim</span>
+      </div>
+      <div class="nav-item px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm text-slate-500" onclick="showPage('adapt',this)">
+        <i class="fas fa-brain w-4 text-center"></i><span>Domain Adaptation</span>
+      </div>
+      <p class="text-xs text-slate-600 font-semibold uppercase tracking-wider px-2 py-1 mt-3">Durum</p>
+      <div class="px-3 py-2">
+        <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Model Doğruluğu</span><span class="mono text-green-400">R² 0.91</span></div>
+        <div class="pbar"><div class="pbar-fill" style="width:91%"></div></div>
+      </div>
+      <div class="px-3 py-2">
+        <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">ASHRAE Uyum</span><span class="mono text-green-400">%100</span></div>
+        <div class="pbar"><div class="pbar-fill" style="width:100%"></div></div>
+      </div>
+    </nav>
+
+    <!-- User -->
+    <div class="border-t border-white/5 px-4 py-3">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full bg-blue-600/30 flex items-center justify-center text-xs font-bold text-blue-400">TG</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold text-slate-300 truncate">Türksat Gölbaşı</p>
+          <p class="text-xs text-slate-600">Enterprise</p>
+        </div>
+        <button onclick="logout()" class="text-slate-600 hover:text-slate-400 text-xs"><i class="fas fa-sign-out-alt"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main id="main-content" class="flex-1 overflow-y-auto h-full">
+
+    <!-- Topbar — tema kodu chip'i kaldırıldı -->
+    <header class="sticky top-0 z-30 flex items-center justify-between px-6 py-3 border-b border-white/5" style="background:rgba(13,19,39,0.95);backdrop-filter:blur(12px)">
+      <div>
+        <h2 class="text-sm font-semibold text-white" id="page-title">Dashboard — Gerçek Zamanlı İzleme</h2>
+        <p class="text-xs text-slate-500" id="page-sub">Türksat Gölbaşı DC · 21 MW · Ankara</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-xs mono text-slate-500" id="top-clock">--:--:--</span>
+        <div class="flex items-center gap-1.5 text-xs text-green-400">
+          <i class="fas fa-circle text-green-400 text-xs animate-pulse"></i> Canlı Akış
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── DASHBOARD ─── -->
+    <div class="page active p-6" id="page-dashboard">
+      <div class="grid grid-cols-4 gap-4 mb-6" id="metric-grid">
+        <div class="metric-card p-5" id="mc-0">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Mevcut PUE</p>
+            <i class="fas fa-thermometer-half text-amber-400 text-sm"></i>
+          </div>
+          <p class="text-4xl font-bold mono text-amber-400 tracking-tight" id="d-current-pue">1.55</p>
+          <p class="text-xs text-slate-600 mt-2">Kurumsal ort. ↑ 1.80</p>
+        </div>
+        <div class="metric-card p-5" id="mc-1">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">AI Hedef PUE</p>
+            <i class="fas fa-bullseye text-green-400 text-sm"></i>
+          </div>
+          <p class="text-4xl font-bold mono text-green-400 tracking-tight" id="d-target-pue">1.24</p>
+          <p class="text-xs text-slate-600 mt-2">%20 tasarruf potansiyeli</p>
+        </div>
+        <div class="metric-card p-5" id="mc-2">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Toplam IT Yükü</p>
+            <i class="fas fa-server text-blue-400 text-sm"></i>
+          </div>
+          <p class="text-4xl font-bold mono text-blue-400 tracking-tight" id="d-it-load">14.1<span class="text-lg">MW</span></p>
+          <p class="text-xs text-slate-600 mt-2">21 MW kapasiteden %67</p>
+        </div>
+        <div class="metric-card p-5" id="mc-3">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Aylık AI Tasarrufu</p>
+            <i class="fas fa-piggy-bank text-green-400 text-sm"></i>
+          </div>
+          <p class="text-3xl font-bold mono text-green-400 tracking-tight" id="d-savings">287K ₺</p>
+          <p class="text-xs text-slate-600 mt-2">3.4M ₺ yıllık projeksiyon</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-4 mb-4">
+        <div class="col-span-2 rounded-xl p-5" style="background:rgba(0,51,160,0.12);border:1px solid rgba(0,51,160,0.25)">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-blue-600/30 flex items-center justify-center">
+              <i class="fas fa-robot text-blue-400 text-xs"></i>
+            </div>
+            <p class="text-sm font-semibold text-white">AI Önerisi</p>
+            <span class="ml-auto chip bg-green-500/10 text-green-400 border border-green-500/20">✓ Doğrulandı</span>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <span class="text-xs text-slate-400">Chiller Kullanımı</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through" id="r-chiller-from">%78</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold" id="r-chiller-to">%62</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <span class="text-xs text-slate-400">Fan Hızı (AHU)</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through" id="r-fan-from">%85</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold" id="r-fan-to">%58</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <span class="text-xs text-slate-400">Soğutma Gücü</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through">4.2 MW</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold">2.8 MW</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <span class="text-xs text-slate-400">Serbest Soğutma</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through">KAPALI</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold">AKTİF</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="runOptimize()" id="opt-btn" class="btn-primary w-full mt-4 py-2.5 rounded-lg text-sm font-semibold text-white">
+            <i class="fas fa-bolt mr-2"></i><span id="opt-btn-txt">Optimize Et</span>
+          </button>
+          <div class="pbar mt-2 hidden" id="opt-pbar"><div class="pbar-fill" id="opt-fill" style="width:0%"></div></div>
+        </div>
+
+        <div class="col-span-3 rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-sm font-semibold text-white">24 Saatlik PUE Trendi</p>
+            <div class="flex items-center gap-4 text-xs">
+              <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 bg-amber-400 inline-block rounded"></span><span class="text-slate-500">Mevcut</span></span>
+              <span class="flex items-center gap-1.5"><span class="w-4 h-px bg-green-400 inline-block rounded"></span><span class="text-slate-500">Optimum</span></span>
+            </div>
+          </div>
+          <svg width="100%" height="130" viewBox="0 0 560 130" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#F59E0B" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="20"  x2="560" y2="20"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="50"  x2="560" y2="50"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="80"  x2="560" y2="80"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="110" x2="560" y2="110" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <text x="0" y="23"  font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">1.8</text>
+            <text x="0" y="53"  font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">1.6</text>
+            <text x="0" y="83"  font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">1.4</text>
+            <text x="0" y="113" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">1.2</text>
+            <path id="chart-area"    fill="url(#cg)" d=""/>
+            <path id="chart-current" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d=""/>
+            <path id="chart-optimum" fill="none" stroke="#00B04F" stroke-width="1.5" stroke-dasharray="5,4" stroke-linecap="round" d=""/>
+            <text x="14"  y="126" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">00</text>
+            <text x="90"  y="126" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">06</text>
+            <text x="165" y="126" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">12</text>
+            <text x="240" y="126" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">18</text>
+            <text x="315" y="126" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">00</text>
+            <text x="390" y="126" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">06</text>
+            <text x="465" y="126" font-size="8" fill="rgba(255,255,255,0.2)" font-family="JetBrains Mono">12</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4 mb-4">
+        <div class="rounded-xl p-4 space-y-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Anlık Parametreler</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">Dış Sıcaklık</p>
+              <p class="text-xl font-bold mono text-amber-400" id="d-temp">22°C</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">Sunucu Yükü</p>
+              <p class="text-xl font-bold mono text-blue-400" id="d-load">67%</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">Inlet Temp</p>
+              <p class="text-xl font-bold mono text-green-400" id="d-inlet">21°C</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">CO₂ Tasarruf</p>
+              <p class="text-xl font-bold mono text-green-400" id="d-co2">18.4t</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Rack Isı Matrisi</p>
+            <span class="text-xs mono text-slate-600">8×4</span>
+          </div>
+          <div class="grid gap-1" style="grid-template-columns:repeat(8,1fr)" id="rack-matrix"></div>
+          <div class="flex items-center gap-3 mt-3">
+            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-green-500/60"></span><span class="text-xs text-slate-600">Normal</span></div>
+            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-amber-500/60"></span><span class="text-xs text-slate-600">Yüksek</span></div>
+            <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-red-500/70"></span><span class="text-xs text-slate-600">Kritik</span></div>
+          </div>
+        </div>
+
+        <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Anomali Uyarıları</p>
+            <span class="anomaly-badge chip bg-red-500/10 text-red-400 border border-red-500/20">2 Aktif</span>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-start gap-2 p-2 rounded-lg bg-red-500/5 border border-red-500/15">
+              <i class="fas fa-exclamation-triangle text-red-400 text-xs mt-0.5"></i>
+              <div><p class="text-xs font-medium text-red-300">Row-3 Rack-7 sıcaklık sapması</p><p class="text-xs text-slate-600 mono">+2.4°C · 14:23</p></div>
+            </div>
+            <div class="flex items-start gap-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/15">
+              <i class="fas fa-exclamation-circle text-amber-400 text-xs mt-0.5"></i>
+              <div><p class="text-xs font-medium text-amber-300">Chiller-2 verim düşüşü</p><p class="text-xs text-slate-600 mono">COP 3.1→2.8 · 13:47</p></div>
+            </div>
+            <div class="flex items-start gap-2 p-2 rounded-lg bg-white/3 border border-white/5">
+              <i class="fas fa-check-circle text-green-400 text-xs mt-0.5"></i>
+              <div><p class="text-xs font-medium text-green-300">AHU-1 frekans normalize</p><p class="text-xs text-slate-600 mono">Çözüldü · 12:10</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nemotron -->
+      <div class="rounded-xl p-5" style="background:linear-gradient(135deg,rgba(0,33,100,0.5) 0%,rgba(0,20,60,0.8) 100%);border:1px solid rgba(0,51,160,0.3)">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(118,185,0,0.2);border:1px solid rgba(118,185,0,0.3)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#76b900"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-white">NVIDIA Nemotron — Türkçe Operasyonel Rapor</p>
+            <p class="text-xs text-slate-500">nvidia/llama-3.3-nemotron-super-49b-v1 · streaming</p>
+          </div>
+        </div>
+        <div class="text-sm text-slate-300 leading-relaxed border-l-2 border-green-500 pl-4" id="report-text">
+          <span id="report-cursor"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SIMULATOR ─── -->
+    <div class="page p-6" id="page-simulator">
+      <div class="grid grid-cols-4 gap-3 mb-5">
+        <button class="preset-btn rounded-xl p-4 text-center border border-white/10 hover:border-blue-500/40 transition-all" style="background:rgba(255,255,255,0.03)" onclick="loadPreset(0,this)">
+          <div class="text-2xl mb-1">☀️</div><p class="text-xs font-semibold text-slate-300">Yaz Öğle</p><p class="text-xs mono text-slate-500 mt-0.5">PUE 1.74→1.31</p>
+        </button>
+        <button class="preset-btn rounded-xl p-4 text-center border border-white/10 hover:border-blue-500/40 transition-all" style="background:rgba(255,255,255,0.03)" onclick="loadPreset(1,this)">
+          <div class="text-2xl mb-1">❄️</div><p class="text-xs font-semibold text-slate-300">Kış Gece</p><p class="text-xs mono text-slate-500 mt-0.5">PUE 1.42→1.19</p>
+        </button>
+        <button class="preset-btn rounded-xl p-4 text-center border border-blue-500/40 transition-all" style="background:rgba(0,51,160,0.1)" onclick="loadPreset(2,this)">
+          <div class="text-2xl mb-1">🌸</div><p class="text-xs font-semibold text-blue-300">Bahar Normal</p><p class="text-xs mono text-slate-500 mt-0.5">PUE 1.53→1.25</p>
+        </button>
+        <button class="preset-btn rounded-xl p-4 text-center border border-white/10 hover:border-blue-500/40 transition-all" style="background:rgba(255,255,255,0.03)" onclick="loadPreset(3,this)">
+          <div class="text-2xl mb-1">🔥</div><p class="text-xs font-semibold text-slate-300">Aşırı Yük</p><p class="text-xs mono text-slate-500 mt-0.5">PUE 1.81→1.38</p>
+        </button>
+      </div>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-2 rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-sm font-semibold text-white">Kontrol Parametreleri</p>
+            <span id="regime-label" class="chip bg-green-500/10 text-green-400 border border-green-500/20">AI Otonom — Kilitli</span>
+          </div>
+          <div id="sliders-wrap" class="space-y-5 opacity-40 pointer-events-none select-none">
+            <div>
+              <div class="flex justify-between mb-1.5"><span class="text-xs font-medium text-slate-400">Dış Sıcaklık (Ankara)</span><span class="text-xs mono text-amber-400" id="sl-temp-val">18°C</span></div>
+              <input type="range" class="w-full accent-blue-500" min="-10" max="45" value="18" id="sl-temp" oninput="updateSim()">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5"><span class="text-xs font-medium text-slate-400">Sunucu İş Yükü</span><span class="text-xs mono text-blue-400" id="sl-load-val">60%</span></div>
+              <input type="range" class="w-full accent-blue-500" min="10" max="100" value="60" id="sl-load" oninput="updateSim()">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5"><span class="text-xs font-medium text-slate-400">Saat (0-23)</span><span class="text-xs mono text-slate-400" id="sl-hour-val">11:00</span></div>
+              <input type="range" class="w-full accent-blue-500" min="0" max="23" value="11" id="sl-hour" oninput="updateSim()">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5"><span class="text-xs font-medium text-slate-400">Chiller Hızı</span><span class="text-xs mono text-green-400" id="sl-chiller-val">62%</span></div>
+              <input type="range" class="w-full accent-blue-500" min="30" max="100" value="62" id="sl-chiller" oninput="updateSim()">
+            </div>
+            <div>
+              <div class="flex justify-between mb-1.5"><span class="text-xs font-medium text-slate-400">Fan Hızı (AHU)</span><span class="text-xs mono text-green-400" id="sl-fan-val">58%</span></div>
+              <input type="range" class="w-full accent-blue-500" min="20" max="100" value="58" id="sl-fan" oninput="updateSim()">
+            </div>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-3">Simülasyon Sonuçları</p>
+            <div class="space-y-2">
+              <div class="flex justify-between"><span class="text-xs text-slate-400">Tahmin PUE</span><span class="mono text-lg font-bold text-amber-400" id="sim-pue">1.53</span></div>
+              <div class="flex justify-between"><span class="text-xs text-slate-400">Inlet Sıcaklık</span><span class="mono font-semibold text-green-400" id="sim-inlet">21°C</span></div>
+              <div class="flex justify-between"><span class="text-xs text-slate-400">Fan Güç</span><span class="mono font-semibold text-blue-400" id="sim-fan">0.8 MW</span></div>
+              <div class="flex justify-between"><span class="text-xs text-slate-400">Aylık Tasarruf</span><span class="mono font-semibold text-green-400" id="sim-save">180K ₺</span></div>
+            </div>
+          </div>
+          <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">ASHRAE TC 9.9</p>
+            <div id="physics-ok" class="flex items-center gap-2">
+              <i class="fas fa-check-circle text-green-400"></i>
+              <span class="text-xs text-green-400 font-medium">Inlet 27°C altında — Güvenli</span>
+            </div>
+            <div id="physics-warn" class="hidden flex items-center gap-2">
+              <i class="fas fa-exclamation-triangle text-red-400"></i>
+              <span class="text-xs text-red-400 font-medium">ASHRAE İhlali! Inlet &gt;27°C</span>
+            </div>
+            <p class="text-xs text-slate-600 mt-1.5">COP: <span class="mono text-slate-400" id="sim-cop">3.2</span> | Karnot eff: <span class="mono text-slate-400">%35</span></p>
+          </div>
+          <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Rack Isı (Canlı)</p>
+            <div class="grid gap-1" style="grid-template-columns:repeat(8,1fr)" id="sim-rack"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── CALENDAR ─── -->
+    <div class="page p-6" id="page-calendar">
+      <div class="grid grid-cols-3 gap-5">
+        <div class="col-span-2 rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <div class="flex items-center justify-between mb-4">
+            <p class="text-sm font-semibold text-white">Kritik Trafik Takvimi — Haziran 2026</p>
+            <span class="chip bg-red-500/10 text-red-400 border border-red-500/20" id="cal-count">0 Kritik Gün</span>
+          </div>
+          <div class="grid grid-cols-7 gap-1 mb-1">
+            <div class="text-center text-xs text-slate-600 font-medium py-1">Pt</div>
+            <div class="text-center text-xs text-slate-600 font-medium py-1">Sa</div>
+            <div class="text-center text-xs text-slate-600 font-medium py-1">Ça</div>
+            <div class="text-center text-xs text-slate-600 font-medium py-1">Pe</div>
+            <div class="text-center text-xs text-slate-600 font-medium py-1">Cu</div>
+            <div class="text-center text-xs text-slate-600 font-medium py-1">Ct</div>
+            <div class="text-center text-xs text-slate-600 font-medium py-1">Pz</div>
+          </div>
+          <div class="grid grid-cols-7 gap-1" id="cal-grid"></div>
+          <div class="mt-4">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">Kayıtlı Etkinlikler</p>
+            <div id="cal-events-list" class="space-y-1.5"></div>
+          </div>
+        </div>
+        <div class="rounded-xl p-5" style="background:rgba(0,51,160,0.08);border:1px solid rgba(0,51,160,0.2)">
+          <p class="text-sm font-semibold text-white mb-4"><i class="fas fa-plus-circle mr-2 text-blue-400"></i>Kritik Gün Ekle</p>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-slate-500 font-medium block mb-1">Etkinlik / Pik Adı</label>
+              <input class="form-input w-full px-3 py-2 rounded-lg text-sm" type="text" id="ev-name" placeholder="Örn: KPSS Açıklanması">
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 font-medium block mb-1">Tarih</label>
+              <input class="form-input w-full px-3 py-2 rounded-lg text-sm" type="date" id="ev-date" value="2026-06-15">
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 font-medium block mb-1">Beklenen Yük Oranı (%)</label>
+              <input class="form-input w-full px-3 py-2 rounded-lg text-sm" type="number" id="ev-load" min="0" max="100" placeholder="85">
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 font-medium block mb-1">Önem Seviyesi</label>
+              <select class="form-input w-full px-3 py-2 rounded-lg text-sm" id="ev-severity">
+                <option value="critical">🔴 Kritik</option>
+                <option value="normal">🟡 Normal</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-500 font-medium block mb-1">Açıklama</label>
+              <textarea class="form-input w-full px-3 py-2 rounded-lg text-sm resize-none" rows="3" id="ev-desc" placeholder="e-Devlet trafik spike'ı bekleniyor..."></textarea>
+            </div>
+            <button onclick="addCalendarEvent()" class="btn-primary w-full py-2.5 rounded-lg text-sm font-semibold text-white">
+              <i class="fas fa-save mr-2"></i>Kaydet & Takvime Ekle
+            </button>
+            <div id="cal-success" class="hidden text-xs text-green-400 text-center mt-1"><i class="fas fa-check-circle mr-1"></i>Kaydedildi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── ADAPT (Sadeleştirilmiş) ─── -->
+    <div class="page p-6" id="page-adapt">
+      <div class="max-w-xl mx-auto space-y-4">
+
+        <!-- Adım 1 — Tesis Adı -->
+        <div class="rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-sm font-semibold text-white mb-4">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-xs flex items-center justify-center inline-flex mr-2">1</span>Tesis Adı
+          </p>
+          <input class="form-input w-full px-3 py-2.5 rounded-lg text-sm" id="adapt-name" type="text" placeholder="Türksat Gölbaşı DC" oninput="updateAdaptCode()">
+        </div>
+
+        <!-- Adım 2 — Veri Yükle -->
+        <div class="rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-sm font-semibold text-white mb-4">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-xs flex items-center justify-center inline-flex mr-2">2</span>Operasyonel Veri Yükle
+          </p>
+          <div class="border-2 border-dashed border-white/10 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500/40 transition-all" onclick="simulateAdaptUpload()">
+            <i class="fas fa-cloud-upload-alt text-3xl text-slate-600 mb-3"></i>
+            <p class="text-sm font-medium text-slate-400" id="adapt-upload-label">CSV dosyasını sürükleyin veya tıklayın</p>
+            <p class="text-xs text-slate-600 mt-1">timestamp, sunucu_yuku, sicaklik, pue · Max 50 MB</p>
+          </div>
+          <div class="pbar mt-3 hidden" id="adapt-upload-pbar"><div class="pbar-fill" id="adapt-upload-fill" style="width:0%"></div></div>
+        </div>
+
+        <!-- Adım 3 — Adaptasyon -->
+        <div class="rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-sm font-semibold text-white mb-4">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-xs flex items-center justify-center inline-flex mr-2">3</span>Model Adaptasyonu
+          </p>
+          <p class="text-xs text-slate-500 mb-4 leading-relaxed">Verileriniz yerel ortamda işlenir. XGBoost warm-start ile genel model tesise özel konfigürasyona uyarlanır — veri hiçbir zaman dışarı çıkmaz.</p>
+          <button onclick="runAdaptation()" id="adapt-run-btn" class="btn-primary w-full py-3 rounded-lg text-sm font-semibold text-white" style="opacity:0.4;cursor:not-allowed">
+            <i class="fas fa-brain mr-2"></i><span id="adapt-btn-txt">Adaptasyonu Başlat</span>
+          </button>
+          <div class="pbar mt-3 hidden" id="adapt-pbar"><div class="pbar-fill" id="adapt-fill" style="width:0%"></div></div>
+          <div class="hidden mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-xs text-green-400" id="adapt-success">
+            <i class="fas fa-check-circle mr-1"></i>Model hazır: <span id="adapt-model-name"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+let HAS_REGISTERED = false;
+let APP_STATE = {firstName: 'Demo', lastName: 'User', facilityName: 'Bilinmeyen Tesis', role: 'Misafir', email: ''};
+const API_BASE = 'http://127.0.0.1:8001';
+
+// AUTH
+function switchAuthTab(t){
+  document.getElementById('login-form').classList.toggle('hidden',t!=='login');
+  document.getElementById('register-form').classList.toggle('hidden',t!=='register');
+  document.getElementById('tab-login').classList.toggle('active',t==='login');
+  document.getElementById('tab-register').classList.toggle('active',t==='register');
+  document.getElementById('tab-login').classList.toggle('text-slate-400',t!=='login');
+  document.getElementById('tab-register').classList.toggle('text-slate-400',t!=='register');
+}
+function toggleRegisterBtn(){
+  const c=document.getElementById('contract-check').checked,b=document.getElementById('register-btn');
+  b.disabled=!c;b.style.opacity=c?'1':'0.4';b.style.cursor=c?'pointer':'not-allowed';
+}
+function attemptLogin() {
+  if (!HAS_REGISTERED) {
+    const err = document.getElementById('login-error');
+    err.classList.remove('hidden');
+    setTimeout(() => {
+      err.classList.add('hidden');
+      switchAuthTab('register');
+    }, 2500);
+    return;
+  }
+  enterApp();
+}
+function registerAndEnterApp() {
+  const fac = document.getElementById('reg-facility');
+  if (!fac || !fac.value.trim()) {
+    alert("Lütfen Tesis / Şirket Adı alanını doldurun.");
+    return;
+  }
+  HAS_REGISTERED = true;
+  enterApp();
+}
+function collectOnboardingState(){
+  const firstName=document.getElementById('reg-first-name')?.value.trim()||APP_STATE.firstName;
+  const lastName=document.getElementById('reg-last-name')?.value.trim()||APP_STATE.lastName;
+  const facilityName=document.getElementById('reg-facility')?.value.trim()||APP_STATE.facilityName;
+  const role=document.getElementById('reg-role')?.value||APP_STATE.role;
+  const email=document.getElementById('reg-email')?.value.trim()||APP_STATE.email;
+  APP_STATE={firstName,lastName,facilityName,role,email,mode:'demo'};
+}
+function applyOnboardingState(){
+  const initials=(APP_STATE.firstName[0]||'D')+(APP_STATE.lastName[0]||'K');
+  const el = document.getElementById('user-initials');
+  if (el) el.textContent=initials.toUpperCase();
+  const facilEl = document.getElementById('sidebar-facility-name');
+  if (facilEl) facilEl.textContent=APP_STATE.facilityName;
+  const roleEl = document.getElementById('sidebar-user-role');
+  if (roleEl) roleEl.textContent=APP_STATE.role;
+  const pageSub = document.getElementById('page-sub');
+  if (pageSub) pageSub.textContent=`${APP_STATE.facilityName} · 21 MW · Ankara`;
+  const adaptName=document.getElementById('adapt-name');
+  if(adaptName&&!adaptName.value.trim())adaptName.value=APP_STATE.facilityName;
+  updateAdaptCode();
+}
+function enterApp(){
+  collectOnboardingState();
+  const as=document.getElementById('auth-screen');
+  as.style.opacity='0';as.style.transition='opacity .5s';
+  setTimeout(()=>{as.classList.add('hidden');document.getElementById('app').classList.remove('hidden');applyOnboardingState();initApp();},500);
+}
+function logout(){
+  document.getElementById('app').classList.add('hidden');
+  const as=document.getElementById('auth-screen');as.classList.remove('hidden');as.style.opacity='1';
+}
+
+// INIT
+function initApp(){
+  updateClock();setInterval(updateClock,1000);
+  renderChart(1.55,1.24);
+  renderRackMatrix('rack-matrix',1.55);
+  renderRackMatrix('sim-rack',1.55);
+  startMetricLoop();
+  setTimeout(fetchBackendReport,800);
+  renderCalendar();renderCalEventsList();
+}
+function updateClock(){
+  const el=document.getElementById('top-clock');
+  if(el)el.textContent=new Date().toLocaleTimeString('tr-TR',{hour12:false});
+}
+
+// PAGE NAV
+const pageTitles={
+  dashboard:['Dashboard — Gerçek Zamanlı İzleme',''],
+  simulator:['Simülatör — Senaryo Testi','Optuna · Fizik Doğrulama · Preset Senaryolar'],
+  calendar:['Kritik Trafik Takvimi','e-Devlet Pik Yönetimi · Haziran 2026'],
+  adapt:['Domain Adaptation','XGBoost Warm Start · Müşteri Verisi · Yerel İşlem'],
+};
+function showPage(id,navEl){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{n.classList.remove('active');n.classList.add('text-slate-500');});
+  document.getElementById('page-'+id).classList.add('active');
+  navEl.classList.add('active');navEl.classList.remove('text-slate-500');
+  const[title,sub]=pageTitles[id]||['',''];
+  document.getElementById('page-title').textContent=title;
+  document.getElementById('page-sub').textContent=id==='dashboard'?`${APP_STATE.facilityName} · 21 MW · Ankara`:sub;
+}
+
+// REGIME
+let regime='auto';
+function setRegime(r){
+  regime=r;
+  const a=document.getElementById('regime-auto'),m=document.getElementById('regime-manual'),
+        sl=document.getElementById('sliders-wrap'),lbl=document.getElementById('regime-label');
+  if(r==='auto'){
+    a.classList.add('active-auto');a.classList.remove('active-manual','text-slate-500');
+    m.classList.remove('active-manual','active-auto');m.classList.add('text-slate-500');
+    sl.classList.add('opacity-40','pointer-events-none','select-none');
+    lbl.textContent='AI Otonom — Kilitli';lbl.className='chip bg-green-500/10 text-green-400 border border-green-500/20';
+  }else{
+    m.classList.add('active-manual');m.classList.remove('active-auto','text-slate-500');
+    a.classList.remove('active-auto','active-manual');a.classList.add('text-slate-500');
+    sl.classList.remove('opacity-40','pointer-events-none','select-none');
+    lbl.textContent='Manuel Sürüş — Aktif';lbl.className='chip bg-amber-500/10 text-amber-400 border border-amber-500/20';
+  }
+}
+
+// METRIC LOOP
+let mcIdx=0;
+function startMetricLoop(){
+  setInterval(()=>{
+    document.querySelectorAll('.metric-card').forEach((c,i)=>c.classList.toggle('scanning',i===mcIdx));
+    mcIdx=(mcIdx+1)%4;
+  },3000);
+}
+
+// CHART
+function renderChart(curPUE,tgtPUE){
+  const N=24,W=560,H=120,x0=14,pMin=1.1,pMax=1.9;
+  const toX=i=>x0+(i/(N-1))*(W-x0-4);
+  const toY=v=>15+(1-(v-pMin)/(pMax-pMin))*(H-30);
+  let cur='',opt='',area='';const pts=[];
+  for(let i=0;i<N;i++){
+    const n=Math.sin(i*0.5)*0.07+(Math.random()*0.04-0.02);
+    const lf=(i>=9&&i<=18)?0.07:-0.03;
+    pts.push({c:curPUE+n+lf,o:tgtPUE+(n*0.3)+(lf*0.3)});
+  }
+  for(let i=0;i<N;i++){
+    const x=toX(i),cy=toY(pts[i].c),oy=toY(pts[i].o);
+    cur+=(i===0?`M${x},${cy}`:`L${x},${cy}`);
+    opt+=(i===0?`M${x},${oy}`:`L${x},${oy}`);
+  }
+  area=opt+` L${toX(N-1)},${toY(pts[N-1].c)}`;
+  for(let i=N-2;i>=0;i--)area+=` L${toX(i)},${toY(pts[i].c)}`;area+=' Z';
+  const cArea = document.getElementById('chart-area');
+  const cCur = document.getElementById('chart-current');
+  const cOpt = document.getElementById('chart-optimum');
+  if(cArea) cArea.setAttribute('d',area);
+  if(cCur) cCur.setAttribute('d',cur);
+  if(cOpt) cOpt.setAttribute('d',opt);
+}
+
+// RACK
+function renderRackMatrix(id,pue){
+  const el=document.getElementById(id);if(!el)return;el.innerHTML='';
+  for(let i=0;i<32;i++){
+    const r=Math.random();let bg;
+    if(pue>1.7&&r<0.12)bg='rgba(239,68,68,0.55)';
+    else if(pue>1.5&&r<0.28)bg='rgba(245,158,11,0.45)';
+    else bg='rgba(34,197,94,0.35)';
+    const d=document.createElement('div');
+    d.className='rack-cell';d.style.cssText=`height:16px;background:${bg}`;
+    el.appendChild(d);
+  }
+}
+
+// NEMOTRON
+let streamIv;
+function startNemotronStream(reportText){
+  if (!reportText) {
+      reportText = "Bugün Ankara'da dış ortam sıcaklığı 22°C ile mevsim normallerinde seyrediyor. Bu koşullar altında serbest soğutma (free cooling) devreye alınması mümkündür ve Chiller-1 yükü %78'den %62'ye düşürülebilir.\n\nAI optimizasyon motoru 150 farklı chiller-fan kombinasyonunu değerlendirdi. Mevcut PUE 1.55'ten 1.24'e indirilerek aylık 287.000 TL tasarruf sağlanabilir. Yıllık projeksiyon 3.4 milyon TL düzeyindedir.\n\nÖnerilen tüm ayarlar ASHRAE TC 9.9 standartlarıyla doğrulanmış, sunucu giriş sıcaklığı 21°C ile güvenli eşiğin (27°C) altında kalmaktadır. Uygulama için tesis müdürü onayı önerilir.";
+  }
+  const el=document.getElementById('report-text'),cur=document.getElementById('report-cursor');
+  if(!el||!cur)return;el.innerHTML='';el.appendChild(cur);
+  let i=0;clearInterval(streamIv);
+  streamIv=setInterval(()=>{
+    if(i<reportText.length){
+      const c=reportText[i++];
+      if(c==='\n'){el.insertBefore(document.createElement('br'),cur);if(reportText[i]==='\n'){el.insertBefore(document.createElement('br'),cur);i++;}}
+      else el.insertBefore(document.createTextNode(c),cur);
+    }else clearInterval(streamIv);
+  },20);
+}
+
+// OPTIMIZE
+function runOptimize(){
+  const btn=document.getElementById('opt-btn'),txt=document.getElementById('opt-btn-txt'),
+        pbar=document.getElementById('opt-pbar'),fill=document.getElementById('opt-fill');
+  btn.disabled=true;txt.textContent='Optuna 150 senaryo...';
+  pbar.classList.remove('hidden');let w=0;
+  const iv=setInterval(()=>{
+    w+=Math.random()*6+2;if(w>=100){w=100;clearInterval(iv);
+      setTimeout(()=>{btn.disabled=false;txt.textContent='Optimize Et';pbar.classList.add('hidden');fill.style.width='0%';fetchBackendReport();},300);
+    }fill.style.width=w+'%';
+  },90);
+}
+
+async function fetchBackendReport(){
+  const currentPue=parseFloat(document.getElementById('d-current-pue').textContent)||1.55;
+  const optimumPue=parseFloat(document.getElementById('d-target-pue').textContent)||1.24;
+  const ambientTemp=parseFloat(document.getElementById('d-temp').textContent)||22;
+  const workload=parseFloat(document.getElementById('d-load').textContent)||67;
+  const inlet=parseFloat(document.getElementById('d-inlet').textContent)||21;
+  const savingsText=document.getElementById('d-savings').textContent;
+  const savings=savingsText.includes('K') ? parseFloat(savingsText)*1000 : parseFloat(savingsText.replace(/\\./g,'').replace(/[^\\d]/g,''))||287000;
+  const payload={
+    scenario_name:`${APP_STATE.facilityName} demo senaryosu`,
+    current_pue:currentPue,
+    optimum_pue:optimumPue,
+    ambient_temp_c:ambientTemp,
+    server_workload_pct:workload,
+    inlet_temp_c:inlet,
+    current_chiller_pct:parseFloat(document.getElementById('r-chiller-from').textContent.replace(/[^\\d.]/g,''))||78,
+    optimized_chiller_pct:parseFloat(document.getElementById('r-chiller-to').textContent.replace(/[^\\d.]/g,''))||62,
+    current_fan_pct:parseFloat(document.getElementById('r-fan-from').textContent.replace(/[^\\d.]/g,''))||85,
+    optimized_fan_pct:parseFloat(document.getElementById('r-fan-to').textContent.replace(/[^\\d.]/g,''))||58,
+    monthly_savings_tl:savings,
+    co2_savings_ton_month:parseFloat(document.getElementById('d-co2').textContent)||18.4,
+    physics_status:inlet<=27?'ok':'warning',
+    physics_notes:[inlet<=27?'ASHRAE inlet limiti altında':'ASHRAE inlet limiti uyarısı'],
+    use_mock:true
+  };
+  try{
+    const response=await fetch(`${API_BASE}/api/report`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!response.ok)throw new Error('report failed');
+    const data=await response.json();
+    startNemotronStream(data.report);
+  }catch(error){
+    startNemotronStream("Backend'e ulaşılamadı. Backend'i 8001 portunda çalıştırınca bu panel /api/report çıktısını gösterecek.\\n\\nKomut: uvicorn main:app --reload --port 8001");
+  }
+}
+
+// SIMULATOR
+const PRESETS=[
+  {temp:35,load:85,hour:14,chiller:78,fan:85,curPUE:1.74,tgtPUE:1.31,save:412000},
+  {temp:-2,load:45,hour:3, chiller:50,fan:45,curPUE:1.42,tgtPUE:1.19,save:145000},
+  {temp:18,load:60,hour:11,chiller:62,fan:58,curPUE:1.53,tgtPUE:1.25,save:287000},
+  {temp:28,load:95,hour:16,chiller:95,fan:95,curPUE:1.81,tgtPUE:1.38,save:521000},
+];
+function loadPreset(idx,el){
+  document.querySelectorAll('.preset-btn').forEach(b=>{b.classList.remove('border-blue-500/40');b.classList.add('border-white/10');});
+  el.classList.remove('border-white/10');el.classList.add('border-blue-500/40');
+  const p=PRESETS[idx];
+  ['temp','load','hour','chiller','fan'].forEach(k=>{
+      const slider = document.getElementById('sl-'+k);
+      if (slider) slider.value=p[k];
+  });
+  updateSim();updateDashboard(p);
+}
+function updateDashboard(p){
+  document.getElementById('d-current-pue').textContent=p.curPUE.toFixed(2);
+  document.getElementById('d-target-pue').textContent=p.tgtPUE.toFixed(2);
+  document.getElementById('d-it-load').innerHTML=(p.load/100*21).toFixed(1)+'<span class="text-lg">MW</span>';
+  document.getElementById('d-savings').textContent=(p.save/1000).toFixed(0)+'K ₺';
+  document.getElementById('d-temp').textContent=p.temp+'°C';
+  document.getElementById('d-load').textContent=p.load+'%';
+  document.getElementById('d-inlet').textContent=Math.round(14+p.temp*0.3+p.load*0.05)+'°C';
+  document.getElementById('r-chiller-from').textContent='%'+p.chiller;
+  document.getElementById('r-fan-from').textContent='%'+p.fan;
+  document.getElementById('r-chiller-to').textContent='%'+Math.round(p.chiller*0.8);
+  document.getElementById('r-fan-to').textContent='%'+Math.round(p.fan*0.7);
+  renderChart(p.curPUE,p.tgtPUE);renderRackMatrix('rack-matrix',p.curPUE);
+}
+function updateSim(){
+  const temp=+document.getElementById('sl-temp').value,load=+document.getElementById('sl-load').value,
+        hour=+document.getElementById('sl-hour').value,chiller=+document.getElementById('sl-chiller').value,
+        fan=+document.getElementById('sl-fan').value;
+  document.getElementById('sl-temp-val').textContent=temp+'°C';
+  document.getElementById('sl-load-val').textContent=load+'%';
+  document.getElementById('sl-hour-val').textContent=hour.toString().padStart(2,'0')+':00';
+  document.getElementById('sl-chiller-val').textContent=chiller+'%';
+  document.getElementById('sl-fan-val').textContent=fan+'%';
+  const pue=+(1.1+(load/100)*0.55+Math.max(0,(temp-10)/100)*0.38-(chiller/100*0.12)-(fan/100*0.08)+Math.random()*0.02).toFixed(2);
+  const clamped=Math.min(Math.max(pue,1.15),1.95);
+  const inlet=Math.round(14+temp*0.3+load*0.05-chiller*0.07);
+  const save=Math.max(0,Math.round((clamped-1.2)*21000*0.5*24*30*1.5));
+  const fanPow=+(21*(load/100)*0.12*Math.pow(fan/100,3)).toFixed(2);
+  const cop=Math.max(1.5,(3.5-temp*0.03-load*0.01)).toFixed(1);
+  document.getElementById('sim-pue').textContent=clamped.toFixed(2);
+  document.getElementById('sim-pue').className='mono text-lg font-bold '+(clamped>1.5?'text-amber-400':'text-green-400');
+  document.getElementById('sim-inlet').textContent=inlet+'°C';
+  document.getElementById('sim-fan').textContent=fanPow+' MW';
+  document.getElementById('sim-save').textContent=(save/1000).toFixed(0)+'K ₺';
+  document.getElementById('sim-cop').textContent=cop;
+  const ok=inlet<=27;
+  document.getElementById('physics-ok').classList.toggle('hidden',!ok);
+  document.getElementById('physics-warn').classList.toggle('hidden',ok);
+  renderRackMatrix('sim-rack',clamped);
+}
+
+// CALENDAR
+let CALENDAR_EVENTS=[
+  {id: 1, name:'KPSS Sonuçları',    date:'2026-06-08',load:88,severity:'critical',desc:'Sınav sonuç açıklaması'},
+  {id: 2, name:'Vergi Beyan Son Gün',date:'2026-06-25',load:72,severity:'critical',desc:'SGK ve gelir vergisi'},
+  {id: 3, name:'Aybaşı SGK',        date:'2026-06-01',load:65,severity:'normal',  desc:'Aylık rutin pik'},
+  {id: 4, name:'YKS Tercihleri',    date:'2026-06-18',load:79,severity:'critical',desc:'Üniversite tercih dönemi'},
+];
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid');if(!grid)return;grid.innerHTML='';
+  const criticalDays={};
+  CALENDAR_EVENTS.forEach(ev=>{
+    const day=parseInt(ev.date.split('-')[2]),month=parseInt(ev.date.split('-')[1]);
+    if(month===6)criticalDays[day]=ev.severity;
+  });
+  for(let day=1;day<=30;day++){
+    const d=document.createElement('div'),sev=criticalDays[day];
+    d.className='cal-day rounded-lg py-2 px-1 text-center '+(sev==='critical'?'critical':sev==='normal'?'normal':'empty');
+    d.style.minHeight='44px';
+    d.innerHTML=`<p class="text-xs font-semibold ${sev==='critical'?'text-red-300':sev==='normal'?'text-amber-300':'text-slate-600'}">${day}</p>`
+      +(sev?`<div class="w-1.5 h-1.5 rounded-full mx-auto mt-0.5 ${sev==='critical'?'bg-red-400':'bg-amber-400'}"></div>`:'');
+    grid.appendChild(d);
+  }
+  const cc=CALENDAR_EVENTS.filter(e=>e.severity==='critical').length;
+  const el=document.getElementById('cal-count');if(el)el.textContent=cc+' Kritik Gün';
+}
+function renderCalEventsList(){
+  const el=document.getElementById('cal-events-list');if(!el)return;el.innerHTML='';
+  CALENDAR_EVENTS.forEach((ev,i)=>{
+    const d=ev.date.split('-'),dateStr=`${d[2]}.${d[1]}.${d[0]}`;
+    const div=document.createElement('div');
+    div.className=`flex items-center justify-between p-2 rounded-lg border ${ev.severity==='critical'?'bg-red-500/5 border-red-500/15':'bg-amber-500/5 border-amber-500/15'}`;
+    div.innerHTML=`<div class="flex items-center gap-2"><span class="${ev.severity==='critical'?'text-red-400':'text-amber-400'} text-xs"><i class="fas fa-circle"></i></span><div><p class="text-xs font-medium ${ev.severity==='critical'?'text-red-300':'text-amber-300'}">${ev.name}</p><p class="text-xs text-slate-600 mono">${dateStr} · %${ev.load} yük</p></div></div><button onclick="removeCalEvent(${i})" class="text-slate-700 hover:text-red-400 text-xs"><i class="fas fa-times"></i></button>`;
+    el.appendChild(div);
+  });
+}
+function addCalendarEvent(){
+  const name=document.getElementById('ev-name').value.trim(),date=document.getElementById('ev-date').value,
+        load=parseInt(document.getElementById('ev-load').value)||70,
+        severity=document.getElementById('ev-severity').value,desc=document.getElementById('ev-desc').value.trim();
+  if(!name||!date){alert('Etkinlik adı ve tarih zorunludur.');return;}
+  CALENDAR_EVENTS.push({id:Date.now(),name,date,load,severity,desc});
+  renderCalendar();renderCalEventsList();
+  const s=document.getElementById('cal-success');s.classList.remove('hidden');setTimeout(()=>s.classList.add('hidden'),3000);
+  document.getElementById('ev-name').value='';document.getElementById('ev-load').value='';document.getElementById('ev-desc').value='';
+}
+function removeCalEvent(idx){CALENDAR_EVENTS.splice(idx,1);renderCalendar();renderCalEventsList();}
+
+// ADAPT
+let uploadedAdaptationFile = null;
+function updateAdaptCode(){
+  const name=document.getElementById('adapt-name').value.trim();
+  const slug=name.toLowerCase().replace(/\\s+/g,'_').replace(/[^a-z0-9_]/g,'')||'musteri';
+  const el=document.getElementById('code-slug');if(el)el.textContent=slug;
+}
+function simulateAdaptUpload(){
+  const label=document.getElementById('adapt-upload-label'),
+        pbar=document.getElementById('adapt-upload-pbar'),
+        fill=document.getElementById('adapt-upload-fill');
+  label.textContent='Yükleniyor...';pbar.classList.remove('hidden');let w=0;
+  const iv=setInterval(()=>{
+    w+=Math.random()*12+3;if(w>=100){w=100;clearInterval(iv);
+      label.textContent='✓ veri_merkezi_2024.csv — 3.498 satır yüklendi';
+      const btn=document.getElementById('adapt-run-btn');btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';
+    }fill.style.width=w+'%';
+  },80);
+}
+async function runAdaptation(){
+  const name=document.getElementById('adapt-name').value.trim()||'musteri';
+  const btn=document.getElementById('adapt-run-btn'),txt=document.getElementById('adapt-btn-txt'),
+        pbar=document.getElementById('adapt-pbar'),fill=document.getElementById('adapt-fill'),
+        suc=document.getElementById('adapt-success'),mname=document.getElementById('adapt-model-name');
+  btn.disabled=true;txt.textContent='Warm-start çalışıyor...';pbar.classList.remove('hidden');let w=0;
+  const iv=setInterval(()=>{
+    w+=Math.random()*7+2;if(w>=100){w=100;clearInterval(iv);
+      const slug=name.toLowerCase().replace(/\\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+      mname.textContent='xgb_pue_'+slug+'.json';suc.classList.remove('hidden');txt.textContent='✓ Tamamlandı';
+    }fill.style.width=w+'%';
+  },120);
+}
+
+</script>
+</body>
+</html>

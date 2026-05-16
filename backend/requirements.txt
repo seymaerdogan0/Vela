@@ -10,3 +10,5 @@ plotly
 requests
 python-dotenv
 joblib
+httpx
+python-multipart
