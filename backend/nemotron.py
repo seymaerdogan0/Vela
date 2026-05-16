@@ -21,10 +21,12 @@ NVIDIA_API_URL = os.getenv(
     "NVIDIA_API_URL",
     os.getenv("NVIDIA_API", "https://integrate.api.nvidia.com/v1/chat/completions"),
 )
+OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "https://openrouter.ai/api/v1/chat/completions")
 NVIDIA_MODEL = os.getenv(
     "NVIDIA_MODEL",
     os.getenv("NVIDIA_MODEL_ID", "nvidia/llama-3.3-nemotron-super-49b-v1"),
 )
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3-nano-30b-a3b:free")
 NVIDIA_TIMEOUT_SECONDS = float(os.getenv("NVIDIA_TIMEOUT_SECONDS", "25"))
 NVIDIA_VERIFY_SSL = os.getenv("NVIDIA_VERIFY_SSL", "false").lower() in {"1", "true", "yes"}
 
@@ -127,18 +129,34 @@ def _extract_json(content: str) -> Dict[str, Any]:
 
 
 def _api_key() -> Optional[str]:
-    key = os.getenv("NVIDIA_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    key = os.getenv("OPENROUTER_API_KEY") or os.getenv("NVIDIA_API_KEY")
     if not key or key in {"nvapi-xxx", "sk-or-v1-xxx"}:
         return None
     return key
 
 
-def _provider_headers(api_key: str) -> Dict[str, str]:
+def _is_openrouter_key(api_key: str) -> bool:
+    return api_key.startswith("sk-or-")
+
+
+def _active_api_url(api_key: str) -> str:
+    if _is_openrouter_key(api_key):
+        return OPENROUTER_API_URL
+    return NVIDIA_API_URL
+
+
+def _active_model(api_key: str) -> str:
+    if _is_openrouter_key(api_key):
+        return OPENROUTER_MODEL
+    return NVIDIA_MODEL
+
+
+def _provider_headers(api_key: str, api_url: str) -> Dict[str, str]:
     headers = {
         "Authorization": "Bearer " + api_key,
         "Content-Type": "application/json",
     }
-    if "openrouter.ai" in NVIDIA_API_URL:
+    if "openrouter.ai" in api_url:
         headers["HTTP-Referer"] = "http://localhost:8001"
         headers["X-Title"] = "ThermaIQ Data Center Twin"
     return headers
@@ -147,13 +165,15 @@ def _provider_headers(api_key: str) -> Dict[str, str]:
 def _call_chat(system_prompt: str, user_message: str, max_tokens: int, temperature: float) -> str:
     api_key = _api_key()
     if not api_key:
-        raise NemotronError("NVIDIA_API_KEY is not configured.")
+        raise NemotronError("NVIDIA_API_KEY or OPENROUTER_API_KEY is not configured.")
+    api_url = _active_api_url(api_key)
+    model = _active_model(api_key)
 
     response = requests.post(
-        NVIDIA_API_URL,
-        headers=_provider_headers(api_key),
+        api_url,
+        headers=_provider_headers(api_key, api_url),
         json={
-            "model": NVIDIA_MODEL,
+            "model": model,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
@@ -511,7 +531,9 @@ def generate_operational_report(raw_payload: Dict[str, Any], use_mock: bool = Fa
     prompt = build_report_prompt(payload, validation_warnings)
 
     provider = "nvidia-nemotron"
-    model = NVIDIA_MODEL
+    api_key = _api_key()
+    provider = "openrouter-nemotron" if api_key and _is_openrouter_key(api_key) else provider
+    model = _active_model(api_key) if api_key else NVIDIA_MODEL
     api_warning = None
 
     if use_mock:

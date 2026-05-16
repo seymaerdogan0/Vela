@@ -222,7 +222,7 @@ def health() -> Dict[str, Any]:
         "components": {
             "physics_engine": "ready",
             "optimizer": "ready",
-            "nemotron": "ready" if os.getenv("NVIDIA_API_KEY") else "fallback_mode",
+            "nemotron": "ready" if (os.getenv("NVIDIA_API_KEY") or os.getenv("OPENROUTER_API_KEY")) else "fallback_mode",
             "report_api": "ready",
             "calendar_parser": "ready",
         },
