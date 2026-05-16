@@ -1,0 +1,7 @@
+date,event_name,category,expected_load_impact,is_holiday
+2026-01-01,Yilbasi,Resmi Tatil,Low,1
+2026-03-31,Gelir Vergisi Son Gun,e-Devlet Trafik,Medium,0
+2026-05-15,100 StaryUP'26 Hackathon Baslangic,Ozel Etkinlik,Medium,0
+2026-06-15,KPSS Sonuclarinin Aciklanmasi,e-Devlet Trafik,Critical,0
+2026-06-20,YKS Sinav Gunu,e-Devlet Trafik,High,0
+2026-10-25,Kritik Mac Gunu,Spor Trafik,High,0

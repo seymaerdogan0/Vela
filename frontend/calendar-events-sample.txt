@@ -1,0 +1,5 @@
+# ThermaIQ takvim metin sablonu
+# Siralama: name | date | load | temp | desc | cooling
+e-Devlet Genel Pik Gunu | 2026-05-19 | 78 | 24 | Pazartesi sabahi vatandas islem piki | +7C Sogutma Rezervi
+YSK Secim Veri Sayim Gunu | 2026-06-01 | 98 | 28 | YSK veri sayim sistemleri maksimum yuk altinda | +15C Kritik Ek Sogutma Modu
+SGK Aybasi Bildirimi Son Gun | 2026-06-23 | 82 | 29 | E-bildirge yuklemeleri nedeniyle aksam piki bekleniyor | +8C Sogutma Rezervi
