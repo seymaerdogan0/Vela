@@ -61,7 +61,8 @@ function registerAndEnterApp() {
     return;
   }
   HAS_REGISTERED = true;
-  enterApp();
+  collectOnboardingState();
+  showTutorial();
 }
 function collectOnboardingState() {
   const firstName = document.getElementById('reg-first-name')?.value.trim() || APP_STATE.firstName;
@@ -85,22 +86,121 @@ function applyOnboardingState() {
   if (adaptName && !adaptName.value.trim()) adaptName.value = APP_STATE.facilityName;
   updateAdaptCode();
 }
-async function enterApp() {
+async function enterApp(){
   collectOnboardingState();
-  try {
+  try{
     await loadPanelPartials();
-  } catch (error) {
+  }catch(error){
     console.error(error);
     alert('Panel dosyaları yüklenemedi. Frontend\'i http://127.0.0.1:3000 üzerinden açtığınızdan emin olun.');
     return;
   }
-  const as = document.getElementById('auth-screen');
-  as.style.opacity = '0'; as.style.transition = 'opacity .5s';
-  setTimeout(() => { as.classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); applyOnboardingState(); initApp(); }, 500);
+  // Hide tutorial overlay if visible
+  const tut=document.getElementById('tutorial-overlay');
+  if(tut && !tut.classList.contains('hidden')){
+    tut.style.opacity='0';tut.style.transition='opacity .4s';
+    await new Promise(r=>setTimeout(r,400));
+    tut.classList.add('hidden');
+  }
+  const as=document.getElementById('auth-screen');
+  if(!as.classList.contains('hidden')){
+    as.style.opacity='0';as.style.transition='opacity .5s';
+    await new Promise(r=>setTimeout(r,500));
+    as.classList.add('hidden');
+  }
+  document.getElementById('app').classList.remove('hidden');
+  applyOnboardingState();
+  initApp();
 }
-function logout() {
+function logout(){
   document.getElementById('app').classList.add('hidden');
-  const as = document.getElementById('auth-screen'); as.classList.remove('hidden'); as.style.opacity = '1';
+  const tut=document.getElementById('tutorial-overlay');
+  if(tut)tut.classList.add('hidden');
+  const as=document.getElementById('auth-screen');as.classList.remove('hidden');as.style.opacity='1';
+}
+
+// ═══ TUTORIAL ═══
+let TUTORIAL_STEP = 0;
+const TUTORIAL_TOTAL = 3;
+
+function showTutorial(){
+  const as=document.getElementById('auth-screen');
+  as.style.opacity='0';as.style.transition='opacity .4s';
+  setTimeout(()=>{
+    as.classList.add('hidden');
+    const tut=document.getElementById('tutorial-overlay');
+    tut.classList.remove('hidden');
+    tut.style.opacity='0';
+    requestAnimationFrame(()=>{tut.style.opacity='1';});
+    TUTORIAL_STEP=0;
+    updateTutorialUI();
+  },400);
+}
+
+function nextTutorialStep(){
+  if(TUTORIAL_STEP >= TUTORIAL_TOTAL - 1){
+    finishTutorial();
+    return;
+  }
+  animateTutorialTransition(TUTORIAL_STEP, TUTORIAL_STEP + 1);
+  TUTORIAL_STEP++;
+  updateTutorialUI();
+}
+
+function prevTutorialStep(){
+  if(TUTORIAL_STEP <= 0) return;
+  TUTORIAL_STEP--;
+  updateTutorialUI();
+  const steps=document.querySelectorAll('.tutorial-step');
+  steps[TUTORIAL_STEP].classList.remove('active');
+  void steps[TUTORIAL_STEP].offsetWidth;
+  steps[TUTORIAL_STEP].classList.add('active');
+}
+
+function goToTutorialStep(idx){
+  if(idx === TUTORIAL_STEP) return;
+  TUTORIAL_STEP = Math.max(0, Math.min(TUTORIAL_TOTAL - 1, idx));
+  updateTutorialUI();
+  const steps=document.querySelectorAll('.tutorial-step');
+  steps[TUTORIAL_STEP].classList.remove('active');
+  void steps[TUTORIAL_STEP].offsetWidth;
+  steps[TUTORIAL_STEP].classList.add('active');
+}
+
+function updateTutorialUI(){
+  document.querySelectorAll('.tutorial-step').forEach((el,i)=>{
+    el.classList.toggle('active', i === TUTORIAL_STEP);
+    if(i !== TUTORIAL_STEP) el.classList.remove('exiting');
+  });
+  document.querySelectorAll('.tutorial-dot').forEach((dot,i)=>{
+    dot.classList.toggle('active', i === TUTORIAL_STEP);
+  });
+  const prev=document.getElementById('tutorial-prev');
+  if(prev) prev.style.visibility = TUTORIAL_STEP === 0 ? 'hidden' : 'visible';
+  const next=document.getElementById('tutorial-next');
+  if(next){
+    if(TUTORIAL_STEP === TUTORIAL_TOTAL - 1){
+      next.className='tutorial-btn tutorial-btn-finish';
+      next.innerHTML='<i class="fas fa-rocket mr-2"></i>Keşfetmeye Başla';
+    } else {
+      next.className='tutorial-btn tutorial-btn-primary';
+      next.innerHTML='İleri<i class="fas fa-arrow-right ml-2"></i>';
+    }
+  }
+}
+
+function animateTutorialTransition(from, to){
+  const steps=document.querySelectorAll('.tutorial-step');
+  if(steps[from]){
+    steps[from].classList.remove('active');
+    steps[from].classList.add('exiting');
+    setTimeout(()=>steps[from].classList.remove('exiting'), 250);
+  }
+}
+
+function finishTutorial(){
+  try{ localStorage.setItem('vela_tutorial_done','1'); }catch(e){}
+  enterApp();
 }
 
 // INIT

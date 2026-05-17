@@ -409,3 +409,157 @@ select.form-input option {
 .rounded-xl {
   border-radius: 10px !important;
 }
+
+/* ═══ TUTORIAL OVERLAY ═══ */
+#tutorial-overlay{
+  background:linear-gradient(180deg,rgba(17,22,32,0.97) 0%,rgba(15,20,28,0.99) 100%);
+  backdrop-filter:blur(24px);
+  transition:opacity .5s ease;
+}
+.tutorial-card{
+  background:rgba(23,29,40,0.96);
+  border:1px solid var(--line);
+  backdrop-filter:blur(16px);
+  max-width:480px;
+  width:100%;
+}
+.tutorial-step{
+  display:none;
+  animation:tutorialFadeIn .45s ease;
+}
+.tutorial-step.active{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+@keyframes tutorialFadeIn{
+  from{opacity:0;transform:translateX(30px)}
+  to{opacity:1;transform:none}
+}
+@keyframes tutorialFadeOut{
+  from{opacity:1;transform:none}
+  to{opacity:0;transform:translateX(-30px)}
+}
+.tutorial-step.exiting{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  animation:tutorialFadeOut .25s ease forwards;
+}
+
+/* Dot indicators */
+.tutorial-dots{display:flex;gap:8px;justify-content:center;margin-top:20px;}
+.tutorial-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,0.15);
+  transition:all .3s ease;
+  cursor:pointer;
+}
+.tutorial-dot.active{
+  background:#6f968c;
+  width:24px;border-radius:4px;
+  box-shadow:0 0 12px rgba(111,150,140,0.4);
+}
+
+/* Step icon area */
+.tutorial-icon-area{
+  width:80px;height:80px;border-radius:20px;
+  display:grid;place-items:center;
+  font-size:32px;
+  margin-bottom:20px;
+  position:relative;
+  overflow:hidden;
+}
+.tutorial-icon-area::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,transparent 60%);
+  border-radius:20px;
+}
+
+/* Mini mockup: Sliders */
+.mock-sliders{display:flex;flex-direction:column;gap:8px;width:100%;max-width:280px;margin-top:16px;}
+.mock-slider{display:flex;align-items:center;gap:10px;}
+.mock-slider-label{font-size:10px;color:rgba(226,232,240,0.5);width:56px;text-align:right;font-family:Consolas,monospace;}
+.mock-slider-track{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;position:relative;}
+.mock-slider-fill{height:100%;border-radius:2px;transition:width 1.5s ease;}
+.mock-slider-fill.s1{width:65%;background:#6f968c;animation:mockSlide1 3s ease-in-out infinite;}
+.mock-slider-fill.s2{width:78%;background:#d7b377;animation:mockSlide2 3.5s ease-in-out infinite;}
+.mock-slider-fill.s3{width:45%;background:#9fb0c7;animation:mockSlide3 4s ease-in-out infinite;}
+@keyframes mockSlide1{0%,100%{width:65%}50%{width:82%}}
+@keyframes mockSlide2{0%,100%{width:78%}50%{width:55%}}
+@keyframes mockSlide3{0%,100%{width:45%}50%{width:70%}}
+
+/* Mini mockup: PUE card */
+.mock-pue-card{
+  display:flex;align-items:center;gap:16px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--line);
+  border-radius:10px;padding:14px 20px;
+  margin-top:16px;max-width:280px;width:100%;
+}
+.mock-pue-value{font-family:Consolas,monospace;font-size:22px;font-weight:700;line-height:1;}
+.mock-pue-arrow{
+  font-size:18px;color:#6f968c;
+  animation:pueArrowPulse 2s ease-in-out infinite;
+}
+@keyframes pueArrowPulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.2);opacity:1}}
+
+/* Mini mockup: Calendar */
+.mock-calendar{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
+  max-width:200px;width:100%;margin-top:16px;
+}
+.mock-cal-cell{
+  height:24px;border-radius:4px;
+  display:grid;place-items:center;
+  font-size:9px;font-weight:600;
+  transition:all .3s;
+}
+.mock-cal-cell.empty{background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.2);}
+.mock-cal-cell.critical{background:rgba(182,95,85,0.25);color:#d08b83;border:1px solid rgba(182,95,85,0.3);}
+.mock-cal-cell.normal{background:rgba(185,138,69,0.18);color:#d7b377;border:1px solid rgba(185,138,69,0.25);}
+.mock-cal-cell.highlight{animation:calCellPulse 2s ease-in-out infinite;}
+@keyframes calCellPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
+/* Tutorial buttons */
+.tutorial-btn{
+  padding:10px 28px;border-radius:8px;font-size:13px;font-weight:600;
+  transition:all .25s;cursor:pointer;border:none;
+}
+.tutorial-btn-primary{
+  background:#4f5f76;color:#fff;
+}
+.tutorial-btn-primary:hover{background:#5c6c83;transform:translateY(-1px);}
+.tutorial-btn-secondary{
+  background:transparent;color:rgba(226,232,240,0.5);border:1px solid rgba(255,255,255,0.1);
+}
+.tutorial-btn-secondary:hover{color:#e2e8f0;border-color:rgba(255,255,255,0.2);}
+.tutorial-btn-finish{
+  background:linear-gradient(135deg,#4f7d72,#3f655c);color:#fff;
+  box-shadow:0 4px 20px rgba(79,125,114,0.3);
+}
+.tutorial-btn-finish:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(79,125,114,0.45);}
+
+/* Step number badge */
+.step-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:700;letter-spacing:0.5px;
+  text-transform:uppercase;color:rgba(226,232,240,0.4);
+  margin-bottom:8px;
+}
+.step-badge-num{
+  width:20px;height:20px;border-radius:50%;
+  display:grid;place-items:center;
+  font-size:10px;font-weight:700;
+  background:rgba(111,150,140,0.2);color:#9fc2ba;
+  border:1px solid rgba(111,150,140,0.3);
+}
+
+/* Feature tags */
+.tutorial-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px;}
+.tutorial-tag{
+  font-size:10px;font-weight:600;
+  padding:3px 10px;border-radius:5px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  color:rgba(226,232,240,0.45);
+}
