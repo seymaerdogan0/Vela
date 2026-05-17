@@ -88,7 +88,134 @@
     </div>
   </div>
 </div>
-<!--  -->
+
+
+<!-- ═══ TUTORIAL OVERLAY ═══ -->
+<div id="tutorial-overlay" class="fixed inset-0 flex items-center justify-center p-4 hidden" style="z-index:45">
+  <div class="tutorial-card rounded-2xl p-8">
+
+    <!-- Step 1: Simülatör -->
+    <div class="tutorial-step active" data-step="0">
+      <div class="step-badge"><span class="step-badge-num">1</span> Adım 1 / 3</div>
+      <div class="tutorial-icon-area" style="background:rgba(79,125,114,0.15);color:#9fc2ba;">
+        <i class="fas fa-sliders-h"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white text-center">Simülatörde Senaryo Oluşturun</h3>
+      <p class="text-xs text-slate-400 text-center mt-2 leading-relaxed max-w-sm">
+        Simülatör panelinde dış sıcaklık, sunucu yükü ve saat gibi koşulları slider'larla ayarlayın.
+        Hazır preset senaryoları da kullanabilirsiniz. Ardından <strong class="text-slate-300">Optimize Et</strong> butonuyla
+        AI motorunu çalıştırın.
+      </p>
+      <div class="mock-sliders">
+        <div class="mock-slider">
+          <span class="mock-slider-label">Sıcaklık</span>
+          <div class="mock-slider-track"><div class="mock-slider-fill s1"></div></div>
+        </div>
+        <div class="mock-slider">
+          <span class="mock-slider-label">Yük</span>
+          <div class="mock-slider-track"><div class="mock-slider-fill s2"></div></div>
+        </div>
+        <div class="mock-slider">
+          <span class="mock-slider-label">Saat</span>
+          <div class="mock-slider-track"><div class="mock-slider-fill s3"></div></div>
+        </div>
+      </div>
+      <div class="tutorial-tags">
+        <span class="tutorial-tag">Optuna 60 Deneme</span>
+        <span class="tutorial-tag">XGBoost Tahmin</span>
+        <span class="tutorial-tag">Fizik Doğrulama</span>
+      </div>
+    </div>
+
+    <!-- Step 2: Dashboard -->
+    <div class="tutorial-step" data-step="1">
+      <div class="step-badge"><span class="step-badge-num">2</span> Adım 2 / 3</div>
+      <div class="tutorial-icon-area" style="background:rgba(70,83,106,0.2);color:#9fb0c7;">
+        <i class="fas fa-tachometer-alt"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white text-center">Dashboard'da Sonuçları İzleyin</h3>
+      <p class="text-xs text-slate-400 text-center mt-2 leading-relaxed max-w-sm">
+        Optimizasyon sonuçları anında Dashboard'a yansır. Mevcut ve hedef PUE, aylık tasarruf,
+        karbon azaltımı ve AI tarafından üretilen <strong class="text-slate-300">Nemotron raporunu</strong> buradan takip edin.
+      </p>
+      <div class="mock-pue-card">
+        <div>
+          <div class="text-xs text-slate-500 mb-1">Mevcut PUE</div>
+          <div class="mock-pue-value" style="color:#d7b377;">1.55</div>
+        </div>
+        <div class="mock-pue-arrow"><i class="fas fa-arrow-right"></i></div>
+        <div>
+          <div class="text-xs text-slate-500 mb-1">Hedef PUE</div>
+          <div class="mock-pue-value" style="color:#9fc2ba;">1.24</div>
+        </div>
+      </div>
+      <div class="tutorial-tags">
+        <span class="tutorial-tag">PUE Trendi</span>
+        <span class="tutorial-tag">Tasarruf</span>
+        <span class="tutorial-tag">Karbon</span>
+        <span class="tutorial-tag">LLM Rapor</span>
+      </div>
+    </div>
+
+    <!-- Step 3: Takvim -->
+    <div class="tutorial-step" data-step="2">
+      <div class="step-badge"><span class="step-badge-num">3</span> Adım 3 / 3</div>
+      <div class="tutorial-icon-area" style="background:rgba(185,138,69,0.15);color:#d7b377;">
+        <i class="fas fa-calendar-alt"></i>
+      </div>
+      <h3 class="text-lg font-bold text-white text-center">Takvimle Kritik Günleri Planlayın</h3>
+      <p class="text-xs text-slate-400 text-center mt-2 leading-relaxed max-w-sm">
+        CSV dosyası yükleyerek kritik trafik günlerini (KPSS, YKS, e-Devlet pikleri) takvime işleyin.
+        Herhangi bir günü seçip koşullarını doğrudan <strong class="text-slate-300">Simülatöre aktarabilirsiniz</strong>.
+      </p>
+      <div class="mock-calendar">
+        <div class="mock-cal-cell empty">5</div>
+        <div class="mock-cal-cell empty">6</div>
+        <div class="mock-cal-cell empty">7</div>
+        <div class="mock-cal-cell critical highlight">8</div>
+        <div class="mock-cal-cell empty">9</div>
+        <div class="mock-cal-cell empty">12</div>
+        <div class="mock-cal-cell empty">13</div>
+        <div class="mock-cal-cell empty">14</div>
+        <div class="mock-cal-cell empty">15</div>
+        <div class="mock-cal-cell normal">16</div>
+        <div class="mock-cal-cell empty">19</div>
+        <div class="mock-cal-cell empty">20</div>
+        <div class="mock-cal-cell empty">21</div>
+        <div class="mock-cal-cell empty">22</div>
+        <div class="mock-cal-cell critical highlight">25</div>
+      </div>
+      <div class="tutorial-tags">
+        <span class="tutorial-tag">CSV Yükleme</span>
+        <span class="tutorial-tag">Sıcaklık Katmanı</span>
+        <span class="tutorial-tag">Simülatöre Aktarım</span>
+      </div>
+    </div>
+
+    <!-- Dots -->
+    <div class="tutorial-dots" id="tutorial-dots">
+      <div class="tutorial-dot active" onclick="goToTutorialStep(0)"></div>
+      <div class="tutorial-dot" onclick="goToTutorialStep(1)"></div>
+      <div class="tutorial-dot" onclick="goToTutorialStep(2)"></div>
+    </div>
+
+    <!-- Navigation buttons -->
+    <div class="flex items-center justify-between mt-6 gap-3 w-full">
+      <button class="tutorial-btn tutorial-btn-secondary" id="tutorial-prev" onclick="prevTutorialStep()" style="visibility:hidden">
+        <i class="fas fa-arrow-left mr-2"></i>Geri
+      </button>
+      <button class="tutorial-btn tutorial-btn-primary" id="tutorial-next" onclick="nextTutorialStep()">
+        İleri<i class="fas fa-arrow-right ml-2"></i>
+      </button>
+    </div>
+
+    <!-- Skip -->
+    <button class="text-xs text-slate-600 hover:text-slate-400 transition-colors mt-4 w-full text-center" onclick="finishTutorial()">
+      Atla ve uygulamaya geç
+    </button>
+  </div>
+</div>
+<!-- ═══ END TUTORIAL ═══ -->
 
 
 <!-- ═══ MAIN APP ═══ -->
@@ -187,6 +314,3 @@
 <script src="assets/app.js"></script>
 </body>
 </html>
-
-
-
