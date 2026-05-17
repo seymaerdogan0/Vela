@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 150" role="img" aria-labelledby="title desc">
+  <title id="title">Vela</title>
+  <desc id="desc">White Vela logo for dark interface backgrounds.</desc>
+  <g fill="none" fill-rule="evenodd">
+    <path fill="#ffffff" opacity=".98" d="M45 85c33 9 66-4 96-35 16-17 37-28 64-35-20 31-29 61-26 90 2 27-12 50-37 62-29 14-59 6-83-20-15-16-34-34-57-54 15-4 30-6 43-8Z" transform="translate(18 -16) scale(.78)"/>
+    <path fill="#ffffff" opacity=".28" d="M5 88c35 16 63 41 85 75-6-34-2-70 13-109-24 28-57 39-98 34Z" transform="translate(18 -16) scale(.78)"/>
+    <text x="165" y="102" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="86" font-weight="500" letter-spacing="0">Vela</text>
+  </g>
+</svg>

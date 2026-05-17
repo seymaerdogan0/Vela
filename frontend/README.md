@@ -23,7 +23,7 @@ Frontend tarafı şu işleri sahiplenmez:
 
 ## Çalıştırma
 
-Frontend statik HTML olarak çalışır.
+Frontend statik dosyalarla çalışır; panel parçaları `fetch` ile yüklendiği için local HTTP server üzerinden açılmalıdır. En kolayı proje kökündeki `run_demo.bat` dosyasına çift tıklamaktır.
 
 ```powershell
 cd "C:\Users\Emirhan\OneDrive - Yildiz Technical University\Masaüstü\POE\thermaiq\frontend"
@@ -35,6 +35,8 @@ Tarayıcı:
 ```text
 http://127.0.0.1:3000
 ```
+
+Sekme logosunu değiştirmek için `frontend/assets/favicon.svg` dosyasını aynı isimle değiştirmeniz yeterlidir.
 
 Backend şu anda frontend tarafından `8001` portunda beklenir:
 

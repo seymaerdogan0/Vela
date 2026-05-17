@@ -1,0 +1,233 @@
+<div class="page active p-6" id="page-dashboard">
+      <div class="grid grid-cols-5 gap-4 mb-6" id="metric-grid">
+        <div class="metric-card p-5" id="mc-0">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Mevcut PUE</p>
+            <i class="fas fa-thermometer-half text-amber-400 text-sm"></i>
+          </div>
+          <p class="text-4xl font-bold mono text-amber-400 tracking-tight" id="d-current-pue">--</p>
+          <p class="text-xs text-slate-600 mt-2">Koşul bekleniyor</p>
+        </div>
+        <div class="metric-card p-5" id="mc-1">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Optimizasyon Sonucu PUE</p>
+            <i class="fas fa-check-double text-green-400 text-sm"></i>
+          </div>
+          <p class="text-4xl font-bold mono text-green-400 tracking-tight" id="d-target-pue">--</p>
+          <p class="text-xs text-slate-600 mt-2">Seçilen koşuldan çıkan sonuç</p>
+        </div>
+        <div class="metric-card p-5" id="mc-2">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Toplam IT Yükü</p>
+            <i class="fas fa-server text-blue-400 text-sm"></i>
+          </div>
+          <p class="text-4xl font-bold mono text-blue-400 tracking-tight" id="d-it-load">--<span class="text-lg">MW</span></p>
+          <p class="text-xs text-slate-600 mt-2">Simülatör koşulu bekleniyor</p>
+        </div>
+        <div class="metric-card p-5" id="mc-3">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Aylık Tasarruf</p>
+            <i class="fas fa-calculator text-green-400 text-sm"></i>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-3xl font-bold mono text-green-400 tracking-tight" id="d-savings">--</p>
+              <label class="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                <span>TL/kWh</span>
+                <input id="energy-price" class="form-input w-16 px-2 py-1 rounded-md text-xs mono" type="text" inputmode="decimal" value="3.2" oninput="updateSavingsWithEnergyPrice()">
+              </label>
+            </div>
+            <div class="savings-ring" id="savings-ring" style="--pct:0%">
+              <span class="mono text-xs font-bold text-green-300" id="savings-rate">--</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-600 mt-2" id="savings-note">Optimizasyon sonrası oran görünür</p>
+        </div>
+        <div class="metric-card p-5" id="mc-4">
+          <div class="flex items-start justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Karbon Emisyonu</p>
+            <i class="fas fa-leaf text-green-400 text-sm"></i>
+          </div>
+          <p class="text-3xl font-bold mono text-green-400 tracking-tight" id="d-carbon">--</p>
+          <p class="text-xs text-slate-600 mt-2" id="carbon-note">Optimizasyon sonrası aylık azaltım</p>
+        </div>
+      </div>
+
+      <div class="rounded-xl p-3 mb-4" style="background:rgba(79,125,114,0.12);border:1px solid rgba(111,150,140,0.28)">
+        <button onclick="toggleDemoFlow()" class="w-full flex flex-wrap items-center justify-between gap-3 text-left">
+          <div>
+            <p class="text-sm font-semibold text-white">Gerçek Entegrasyon Demo Akışı</p>
+            <p class="text-xs text-slate-500 mt-1" id="demo-flow-summary">Kapalı · backend akış durumlarını görmek için açın.</p>
+          </div>
+          <span class="flex items-center gap-2">
+            <span class="chip bg-green-500/10 text-green-400 border border-green-500/20" id="llm-mode-badge">LLM: Hazır</span>
+            <i class="fas fa-chevron-down text-slate-500 text-xs transition-transform" id="demo-flow-icon"></i>
+          </span>
+        </button>
+        <div class="hidden" id="demo-flow-body">
+          <p class="text-xs text-slate-500 mt-3">Simülatörde koşul seçilip optimize edildiğinde backend /api/twin-optimize hattı çalışır ve sonuçlar burada görünür.</p>
+          <div class="grid grid-cols-4 gap-3 mt-4">
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+              <p class="text-xs text-slate-600">Veri Kaynağı</p>
+              <p class="text-sm font-semibold text-slate-300" id="demo-data-source">Koşul bekleniyor</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+              <p class="text-xs text-slate-600">Backend</p>
+              <p class="text-sm font-semibold text-slate-300" id="demo-backend-status">Henüz çağrılmadı</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+              <p class="text-xs text-slate-600">Fizik Çıktısı</p>
+              <p class="text-sm font-semibold text-slate-300" id="demo-physics-status">-</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06)">
+              <p class="text-xs text-slate-600">Takvim Parser</p>
+              <p class="text-sm font-semibold text-slate-300" id="demo-calendar-status">-</p>
+            </div>
+          </div>
+          <pre id="demo-payload-preview" class="hidden mt-3 text-xs text-slate-400 mono whitespace-pre-wrap rounded-lg p-3" style="background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.06)"></pre>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-5 gap-4 mb-4">
+        <div class="col-span-2 rounded-xl p-5" style="background:rgba(70,83,106,0.12);border:1px solid rgba(142,154,174,0.25)">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-7 h-7 rounded-lg bg-blue-600/30 flex items-center justify-center">
+              <i class="fas fa-robot text-blue-400 text-xs"></i>
+            </div>
+            <p class="text-sm font-semibold text-white">AI Önerisi</p>
+          <span class="ml-auto chip bg-blue-500/10 text-blue-300 border border-blue-500/20" id="ai-status-chip">Koşul Bekliyor</span>
+          </div>
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <span class="text-xs text-slate-400">Chiller Setpoint</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through" id="r-chiller-from">--</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold" id="r-chiller-to">--</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <span class="text-xs text-slate-400">Fan Hızı (AHU)</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through" id="r-fan-from">--</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold" id="r-fan-to">--</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between py-2 border-b border-white/5">
+              <span class="text-xs text-slate-400">Soğutma Gücü</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through" id="r-cooling-from">--</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold" id="r-cooling-to">--</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between py-2">
+              <span class="text-xs text-slate-400">Serbest Soğutma</span>
+              <div class="flex items-center gap-2 mono text-xs">
+                <span class="text-slate-600 line-through" id="r-free-from">--</span>
+                <i class="fas fa-arrow-right text-green-400 text-xs"></i>
+                <span class="text-green-400 font-semibold" id="r-free-to">--</span>
+              </div>
+            </div>
+          </div>
+          <button onclick="runOptimize()" id="opt-btn" class="btn-primary w-full mt-4 py-2.5 rounded-lg text-sm font-semibold text-white">
+            <i class="fas fa-sliders-h mr-2"></i><span id="opt-btn-txt">Simülatörde Koşul Seç</span>
+          </button>
+          <div class="pbar mt-2 hidden" id="opt-pbar"><div class="pbar-fill" id="opt-fill" style="width:0%"></div></div>
+        </div>
+
+        <div class="col-span-3 rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-sm font-semibold text-white" id="trend-title">PUE Trendi</p>
+              <p class="text-xs text-slate-600 mt-0.5" id="trend-summary">Optimizasyon sonrası bu koşula ait trend görünür</p>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <div class="flex items-center rounded-lg border border-white/10 p-0.5 bg-white/5">
+                <button class="trend-scale-btn px-2.5 py-1 rounded-md text-slate-200 bg-white/10" id="scale-24h" onclick="setTrendScale('24h')">24 Saat</button>
+                <button class="trend-scale-btn px-2.5 py-1 rounded-md text-slate-500" id="scale-7d" onclick="setTrendScale('7d')">7 Gün</button>
+              </div>
+              <label class="flex items-center gap-1.5 text-slate-500 cursor-pointer"><input type="checkbox" class="accent-blue-500" id="series-current" checked onchange="updateTrendVisibility()">Mevcut</label>
+              <label class="flex items-center gap-1.5 text-slate-500 cursor-pointer"><input type="checkbox" class="accent-blue-500" id="series-optimum" checked onchange="updateTrendVisibility()">Optimal</label>
+              <label class="flex items-center gap-1.5 text-slate-500 cursor-pointer"><input type="checkbox" class="accent-blue-500" id="series-forecast" onchange="updateTrendVisibility()">İleri Tahmin</label>
+            </div>
+          </div>
+          <svg width="100%" height="130" viewBox="0 0 560 130" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"   stop-color="#F59E0B" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line x1="0" y1="20"  x2="560" y2="20"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="50"  x2="560" y2="50"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="80"  x2="560" y2="80"  stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <line x1="0" y1="110" x2="560" y2="110" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+            <text x="0" y="23"  font-size="8" fill="rgba(255,255,255,0.2)" font-family="Consolas">1.8</text>
+            <text x="0" y="53"  font-size="8" fill="rgba(255,255,255,0.2)" font-family="Consolas">1.6</text>
+            <text x="0" y="83"  font-size="8" fill="rgba(255,255,255,0.2)" font-family="Consolas">1.4</text>
+            <text x="0" y="113" font-size="8" fill="rgba(255,255,255,0.2)" font-family="Consolas">1.2</text>
+            <path id="chart-area"    fill="url(#cg)" d=""/>
+            <path id="chart-current" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d=""/>
+            <path id="chart-optimum" fill="none" stroke="#4f7d72" stroke-width="1.5" stroke-dasharray="5,4" stroke-linecap="round" d=""/>
+            <path id="chart-forecast" fill="none" stroke="#9fb0c7" stroke-width="1.5" stroke-dasharray="2,5" stroke-linecap="round" d=""/>
+            <g id="chart-now-marker"></g>
+            <g id="chart-x-labels"></g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="rounded-xl p-4 space-y-3" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Anlık Parametreler</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">Dış Sıcaklık</p>
+              <p class="text-xl font-bold mono text-amber-400" id="d-temp">--</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">Sunucu Yükü</p>
+              <p class="text-xl font-bold mono text-blue-400" id="d-load">--</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">Inlet Temp</p>
+              <p class="text-xl font-bold mono text-green-400" id="d-inlet">--</p>
+            </div>
+            <div class="rounded-lg p-3" style="background:rgba(255,255,255,0.04)">
+              <p class="text-xs text-slate-600">CO₂ Tasarruf</p>
+              <p class="text-xl font-bold mono text-green-400" id="d-co2">--</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl p-4" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Anomali Uyarıları</p>
+            <span class="chip bg-blue-500/10 text-blue-300 border border-blue-500/20" id="anomaly-count">Koşul Bekliyor</span>
+          </div>
+          <div class="space-y-2" id="anomaly-list">
+            <div class="flex items-start gap-2 p-2 rounded-lg bg-white/3 border border-white/5">
+              <i class="fas fa-circle-info text-blue-300 text-xs mt-0.5"></i>
+              <div><p class="text-xs font-medium text-slate-300">Henüz koşul çalıştırılmadı</p><p class="text-xs text-slate-600">Simülatörde bir koşul optimize edilince termal uyarılar burada görünür.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nemotron -->
+      <div class="rounded-xl p-5" style="background:linear-gradient(135deg,rgba(0,33,100,0.5) 0%,rgba(0,20,60,0.8) 100%);border:1px solid rgba(0,51,160,0.3)">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:rgba(118,185,0,0.2);border:1px solid rgba(118,185,0,0.3)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#76b900"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-white">NVIDIA Nemotron — Türkçe Operasyonel Rapor</p>
+            <p class="text-xs text-slate-500">nvidia/llama-3.3-nemotron-super-49b-v1 · streaming</p>
+          </div>
+        </div>
+        <div class="text-sm text-slate-300 leading-relaxed border-l-2 border-green-500 pl-4" id="report-text">
+          <span id="report-cursor"></span>
+        </div>
+      </div>
+    </div>

@@ -1,0 +1,43 @@
+<div class="page p-6" id="page-adapt">
+      <div class="max-w-xl mx-auto space-y-4">
+
+        <!-- Adım 1 — Tesis Adı -->
+        <div class="rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-sm font-semibold text-white mb-4">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-xs flex items-center justify-center inline-flex mr-2">1</span>Tesis Adı
+          </p>
+          <input class="form-input w-full px-3 py-2.5 rounded-lg text-sm" id="adapt-name" type="text" placeholder="Türksat Gölbaşı DC" oninput="updateAdaptCode()">
+        </div>
+
+        <!-- Adım 2 — Veri Yükle -->
+        <div class="rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-sm font-semibold text-white mb-4">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-xs flex items-center justify-center inline-flex mr-2">2</span>Operasyonel Veri Yükle
+          </p>
+          <input id="adapt-file-input" type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" class="hidden" onchange="uploadAdaptationFile(this.files[0])">
+          <div class="border-2 border-dashed border-white/10 rounded-xl p-10 text-center cursor-pointer hover:border-blue-500/40 transition-all" onclick="document.getElementById('adapt-file-input').click()">
+            <i class="fas fa-cloud-upload-alt text-3xl text-slate-600 mb-3"></i>
+            <p class="text-sm font-medium text-slate-400" id="adapt-upload-label">CSV dosyasını sürükleyin veya tıklayın</p>
+            <p class="text-xs text-slate-600 mt-1">timestamp, sunucu_yuku, sicaklik, pue · Max 50 MB</p>
+          </div>
+          <div class="pbar mt-3 hidden" id="adapt-upload-pbar"><div class="pbar-fill" id="adapt-upload-fill" style="width:0%"></div></div>
+          <div id="adapt-upload-status" class="hidden mt-3 p-3 rounded-lg border text-xs"></div>
+        </div>
+
+        <!-- Adım 3 — Adaptasyon -->
+        <div class="rounded-xl p-5" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07)">
+          <p class="text-sm font-semibold text-white mb-4">
+            <span class="w-6 h-6 rounded-full bg-blue-600 text-xs flex items-center justify-center inline-flex mr-2">3</span>Model Adaptasyonu
+          </p>
+          <p class="text-xs text-slate-500 mb-4 leading-relaxed">Verileriniz yerel ortamda işlenir. XGBoost warm-start ile genel model tesise özel konfigürasyona uyarlanır — veri hiçbir zaman dışarı çıkmaz.</p>
+          <button onclick="runAdaptation()" id="adapt-run-btn" class="btn-primary w-full py-3 rounded-lg text-sm font-semibold text-white" style="opacity:0.4;cursor:not-allowed">
+            <i class="fas fa-brain mr-2"></i><span id="adapt-btn-txt">Adaptasyonu Başlat</span>
+          </button>
+          <div class="pbar mt-3 hidden" id="adapt-pbar"><div class="pbar-fill" id="adapt-fill" style="width:0%"></div></div>
+          <div class="hidden mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-xs text-green-400" id="adapt-success">
+            <i class="fas fa-check-circle mr-1"></i>Model hazır: <span id="adapt-model-name"></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
